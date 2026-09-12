@@ -1,4 +1,17 @@
+# Week 5 – OOP Advanced Concepts
 
+- Inheritance
+- Types of inheritance
+- Method overriding
+- Polymorphism
+- `super` keyword
+- Abstract classes
+- Interfaces
+- Multiple inheritance using interfaces
+- Constructor chaining
+- OOP-based problem solving
+
+**Schedule:** Saturday – 1:00pm-5:00pm
 # Week 4 – OOP Fundamentals
 
 * Encapsulation
