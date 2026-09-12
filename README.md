@@ -1,15 +1,38 @@
-# Step Semester 3
 
-## Date: 11-09-2026
+# Week 3 – OOP Fundamentals-22/08/2026
 
-**Today's Work:**
-- Created Session 1 branch
-- Practiced String problems
-- Completed class problems
-- Completed assignment problems
+* Classes and objects
+* Constructors
+* Instance and static members
+* Inheritance
+* `super()`
+* `instanceof`
+* Object references
+* `null` handling
+* OOP-based programs
 
-**Next Session Plan:**
-- Start Session 2
+**Schedule:** Saturday – 1:00pm-5:00pm
+# Week 2 – String Operations-15/09/2026
 
-**Issues Faced:**
-- None
+* String basics
+* `length()`
+* `charAt()`
+* `substring()`
+* `equals()`
+* `String.join()`
+* String manipulation programs
+
+**Schedule:** Saturday – 1:00pm-5:00pm
+
+# Week 1 – Java Basics-08/09/2026
+
+* Java fundamentals
+* Variables and data types
+* Operators
+* Input and output
+* Conditional statements
+* Loops
+* Basic Java programs
+
+**Schedule:** Saturday – 1:00pm-5:00pm
+
