@@ -1,6 +1,6 @@
 # Step Semester 3
 
-## Date: 12-09-2026
+## Date: 15-08-2026
 
 **Today's Work:**
 - Created the feature/session_2 branch from develop.
@@ -16,7 +16,7 @@
 **Issues Faced:**
 - None
 
-## Date: 11-09-2026
+## Date: 8-08-2026
 
 **Today's Work:**
 - Created the GitHub repository.
