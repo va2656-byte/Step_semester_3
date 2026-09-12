@@ -1,4 +1,19 @@
 
+# Week 4 – OOP Fundamentals
+
+* Encapsulation
+* Access modifiers
+* Method overloading
+* Method overriding
+* Polymorphism
+* Abstract classes
+* Interfaces
+* `this` keyword
+* `super()` keyword
+* OOP-based programs
+
+**Schedule:** Saturday – 1:00pm-5:00pm
+
 # Week 3 – OOP Fundamentals-22/08/2026
 
 * Classes and objects
