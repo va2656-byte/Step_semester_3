@@ -1,139 +1,112 @@
-import java.util.*;
+class RaceEntry {
+    protected String bibNumber;
+    protected double entryFee;
+    protected double amountPaid;
 
-class LibraryMember {
+    public RaceEntry(String bibNumber, double entryFee) {
+        if (bibNumber == null || bibNumber.trim().length() < 4) {
+            throw new IllegalArgumentException("Invalid bib number");
+        }
 
-    private String membershipId;
-    private String name;
-    private boolean premiumMember;
-    private String securityAnswer;
-
-    public LibraryMember() {
-        this(null, null);
+        this.bibNumber = bibNumber;
+        this.entryFee = entryFee;
     }
 
-    public LibraryMember(String name) {
-        this(null, name);
-    }
-
-    public LibraryMember(
-            String membershipId,
-            String name) {
-
-        this.membershipId = membershipId;
-        this.name = name;
-        this.premiumMember = false;
-        this.securityAnswer = null;
-    }
-
-    public String getMembershipId() {
-        return membershipId;
-    }
-
-    public void setMembershipId(String id) {
-
-        if (membershipId == null) {
-            membershipId = id;
+    public void pay(double amount) {
+        if (amount > 0) {
+            amountPaid += amount;
         }
     }
 
-    public String getName() {
-        return name;
+    public double getBalanceDue() {
+        return entryFee - amountPaid;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String announce() {
+        return "Race Entry | Bib: " + bibNumber
+                + " | Balance: " + getBalanceDue();
+    }
+}
+
+class RunnerEntry extends RaceEntry {
+    private String category;
+
+    public RunnerEntry(String bibNumber, double entryFee,
+                       String category) {
+        super(bibNumber, entryFee);
+        this.category = category;
     }
 
-    public boolean isPremiumMember() {
-        return premiumMember;
+    @Override
+    public String announce() {
+        return "Runner Entry | Bib: " + bibNumber
+                + " | Category: " + category
+                + " | Balance: " + getBalanceDue();
+    }
+}
+
+class RelayTeamEntry extends RaceEntry {
+    private int teamSize;
+
+    public RelayTeamEntry(String bibNumber, double entryFee,
+                          int teamSize) {
+        super(bibNumber, entryFee);
+        this.teamSize = teamSize;
     }
 
-    public void setPremiumMember(
-            boolean premium) {
-
-        this.premiumMember = premium;
+    public int getTeamSize() {
+        return teamSize;
     }
 
-    public void setSecurityAnswer(
-            String answer) {
-
-        if (answer != null &&
-            !answer.trim().isEmpty()) {
-
-            securityAnswer = answer;
-        }
+    @Override
+    public String announce() {
+        return "Relay Team | Bib: " + bibNumber
+                + " | Team Size: " + teamSize
+                + " | Balance: " + getBalanceDue();
     }
 }
 
 public class Problem4 {
+    static String announceAll(RaceEntry[] entries) {
+        StringBuilder report = new StringBuilder();
+
+        for (int i = 0; i < entries.length; i++) {
+            report.append(entries[i].announce()).append(" | ");
+
+            if (entries[i] instanceof RelayTeamEntry) {
+                RelayTeamEntry relay =
+                        (RelayTeamEntry) entries[i];
+
+                report.append("[Team size via downcast: ")
+                      .append(relay.getTeamSize())
+                      .append("] | ");
+            }
+        }
+
+        return report.toString();
+    }
 
     public static void main(String[] args) {
+        RunnerEntry runner =
+                new RunnerEntry("BIB2001", 80, "Open 10K");
 
-        Scanner sc = new Scanner(System.in);
+        runner.pay(30);
+        runner.pay(20);
 
-        System.out.print("Enter member name: ");
-        String name = sc.nextLine();
+        RelayTeamEntry relay =
+                new RelayTeamEntry("BIB4001", 300, 4);
 
-        LibraryMember member =
-            new LibraryMember(name);
+        RaceEntry[] fleet = {runner, relay};
 
-        System.out.println(
-            "Initial membership ID: " +
-            member.getMembershipId()
-        );
+        System.out.println(announceAll(fleet));
 
-        System.out.print(
-            "Enter membership ID: "
-        );
+        RaceEntry plain = new RaceEntry("BIB5001", 50);
 
-        String id = sc.nextLine();
-
-        member.setMembershipId(id);
-
-        System.out.println(
-            "Membership ID: " +
-            member.getMembershipId()
-        );
-
-        System.out.print(
-            "Enter another membership ID: "
-        );
-
-        String secondId = sc.nextLine();
-
-        member.setMembershipId(secondId);
-
-        System.out.println(
-            "After second attempt: " +
-            member.getMembershipId()
-        );
-
-        System.out.print(
-            "Is premium member? (true/false): "
-        );
-
-        boolean premium = sc.nextBoolean();
-        sc.nextLine();
-
-        member.setPremiumMember(premium);
-
-        System.out.println(
-            "Premium member: " +
-            member.isPremiumMember()
-        );
-
-        System.out.print(
-            "Enter security answer: "
-        );
-
-        String answer = sc.nextLine();
-
-        member.setSecurityAnswer(answer);
-
-        System.out.println(
-            "Security answer stored successfully."
-        );
-
-        sc.close();
+        if (plain instanceof RelayTeamEntry) {
+            RelayTeamEntry bad = (RelayTeamEntry) plain;
+            System.out.println(bad.getTeamSize());
+        } else {
+            System.out.println("Entry is not a relay team");
+        }
     }
 }

@@ -1,207 +1,72 @@
-import java.util.*;
+class RaceEntry {
+    protected String bibNumber;
+    protected double entryFee;
+    protected double amountPaid;
 
-class LibraryMember {
-    private String membershipId;
-    String branchCode;
-    protected double finesOwed;
-    public String displayName;
-
-    public LibraryMember(String membershipId, String branchCode,
-                         double finesOwed, String displayName) {
-
-        if (membershipId == null ||
-            membershipId.trim().isEmpty() ||
-            membershipId.trim().length() < 4) {
-
-            throw new IllegalArgumentException(
-                "Invalid membership ID"
-            );
+    public RaceEntry(String bibNumber, double entryFee) {
+        if (bibNumber == null || bibNumber.trim().length() < 4) {
+            throw new IllegalArgumentException("Invalid bib number");
         }
 
-        this.membershipId = membershipId.trim();
-        this.branchCode = branchCode;
-        this.finesOwed = finesOwed;
-        this.displayName = displayName;
+        this.bibNumber = bibNumber;
+        this.entryFee = entryFee;
+        amountPaid = 0;
+    }
+
+    public void pay(double amount) {
+        if (amount > 0) {
+            amountPaid += amount;
+        }
+    }
+
+    public double getBalanceDue() {
+        return entryFee - amountPaid;
+    }
+
+    public static String registerBatch(String[] bibNumbers,
+                                       double entryFee) {
+        int registered = 0;
+        int rejected = 0;
+
+        for (int i = 0; i < bibNumbers.length; i++) {
+            try {
+                new RaceEntry(bibNumbers[i], entryFee);
+                registered++;
+            } catch (IllegalArgumentException e) {
+                rejected++;
+            }
+        }
+
+        return "Registered: " + registered
+                + " | Rejected: " + rejected;
     }
 }
 
-class AccessChecker {
+class RunnerEntry extends RaceEntry {
+    private String category;
 
-    static String classifyAccess(
-            String fieldModifier,
-            String accessorContext) {
-
-        if (fieldModifier.equals("private")) {
-
-            if (accessorContext.equals("SAME_CLASS")) {
-                return "ALLOWED";
-            }
-
-            return "DENIED";
-        }
-
-        if (fieldModifier.equals("default")) {
-
-            if (accessorContext.equals("SAME_CLASS") ||
-                accessorContext.equals("SAME_PACKAGE")) {
-
-                return "ALLOWED";
-            }
-
-            return "DENIED";
-        }
-
-        if (fieldModifier.equals("protected")) {
-
-            if (accessorContext.equals("SAME_CLASS") ||
-                accessorContext.equals("SAME_PACKAGE")) {
-
-                return "ALLOWED";
-            }
-
-            return "DENIED";
-        }
-
-        if (fieldModifier.equals("public")) {
-            return "ALLOWED";
-        }
-
-        return "DENIED";
-    }
-
-    static String summarizeByModifier(
-            String[][] attempts) {
-
-        int privateAllowed = 0;
-        int privateDenied = 0;
-
-        int defaultAllowed = 0;
-        int defaultDenied = 0;
-
-        int protectedAllowed = 0;
-        int protectedDenied = 0;
-
-        int publicAllowed = 0;
-        int publicDenied = 0;
-
-        for (String[] attempt : attempts) {
-
-            String modifier = attempt[0];
-            String context = attempt[1];
-
-            String result =
-                classifyAccess(modifier, context);
-
-            if (modifier.equals("private")) {
-
-                if (result.equals("ALLOWED"))
-                    privateAllowed++;
-                else
-                    privateDenied++;
-
-            } else if (modifier.equals("default")) {
-
-                if (result.equals("ALLOWED"))
-                    defaultAllowed++;
-                else
-                    defaultDenied++;
-
-            } else if (modifier.equals("protected")) {
-
-                if (result.equals("ALLOWED"))
-                    protectedAllowed++;
-                else
-                    protectedDenied++;
-
-            } else if (modifier.equals("public")) {
-
-                if (result.equals("ALLOWED"))
-                    publicAllowed++;
-                else
-                    publicDenied++;
-            }
-        }
-
-        return "private: " + privateAllowed +
-               " allowed / " + privateDenied + " denied | " +
-
-               "default: " + defaultAllowed +
-               " allowed / " + defaultDenied + " denied | " +
-
-               "protected: " + protectedAllowed +
-               " allowed / " + protectedDenied + " denied | " +
-
-               "public: " + publicAllowed +
-               " allowed / " + publicDenied + " denied";
+    public RunnerEntry(String bibNumber, double entryFee,
+                       String category) {
+        super(bibNumber, entryFee);
+        this.category = category;
     }
 }
 
 public class Problem1 {
-
     public static void main(String[] args) {
+        RunnerEntry r =
+                new RunnerEntry("BIB2001", 80, "Open 10K");
 
-        Scanner sc = new Scanner(System.in);
+        r.pay(30);
+        System.out.println(r.getBalanceDue());
 
-        System.out.print("Enter number of attempts: ");
-        int n = sc.nextInt();
-        sc.nextLine();
-
-        String[][] attempts = new String[n][2];
-
-        for (int i = 0; i < n; i++) {
-
-            System.out.println("\nAttempt " + (i + 1));
-
-            System.out.print(
-                "Enter modifier (private/default/protected/public): "
-            );
-
-            attempts[i][0] = sc.nextLine();
-
-            System.out.print(
-                "Enter context (SAME_CLASS/SAME_PACKAGE/DIFFERENT_PACKAGE): "
-            );
-
-            attempts[i][1] = sc.nextLine();
-        }
-
-        System.out.println(
-            AccessChecker.summarizeByModifier(attempts)
-        );
-
-        System.out.println("\nLibrary Member Test");
-
-        System.out.print("Enter membership ID: ");
-        String id = sc.nextLine();
-
-        System.out.print("Enter branch code: ");
-        String branch = sc.nextLine();
-
-        System.out.print("Enter fines owed: ");
-        double fines = sc.nextDouble();
-        sc.nextLine();
-
-        System.out.print("Enter display name: ");
-        String name = sc.nextLine();
+        System.out.println(RaceEntry.registerBatch(
+                new String[]{"BIB1", "B1", "BIB2"}, 80));
 
         try {
-
-            LibraryMember member =
-                new LibraryMember(
-                    id, branch, fines, name
-                );
-
-            System.out.println(
-                "Library member created successfully."
-            );
-
-        } catch (Exception e) {
-
-            System.out.println(
-                "Construction rejected"
-            );
+            new RaceEntry("B1", 50);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Construction rejected");
         }
-
-        sc.close();
     }
 }

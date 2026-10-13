@@ -1,102 +1,120 @@
-import java.util.*;
+class RaceEntry {
+    protected String bibNumber;
+    protected double entryFee;
+    protected double amountPaid;
 
-class AccessChecker2 {
-
-    static String classifyAccess(
-            String fieldModifier,
-            String accessorContext) {
-
-        if (fieldModifier.equals("private")) {
-
-            return accessorContext.equals("SAME_CLASS")
-                    ? "ALLOWED"
-                    : "DENIED";
+    public RaceEntry(String bibNumber, double entryFee) {
+        if (bibNumber == null || bibNumber.trim().length() < 4) {
+            throw new IllegalArgumentException("Invalid bib number");
         }
 
-        if (fieldModifier.equals("default")) {
-
-            return accessorContext.equals("SAME_CLASS") ||
-                   accessorContext.equals("SAME_PACKAGE")
-                    ? "ALLOWED"
-                    : "DENIED";
-        }
-
-        if (fieldModifier.equals("protected")) {
-
-            if (accessorContext.equals("SAME_CLASS") ||
-                accessorContext.equals("SAME_PACKAGE") ||
-                accessorContext.equals(
-                    "SUBCLASS_DIFFERENT_PACKAGE_OWN_TYPE")) {
-
-                return "ALLOWED";
-            }
-
-            return "DENIED";
-        }
-
-        if (fieldModifier.equals("public")) {
-            return "ALLOWED";
-        }
-
-        return "DENIED";
+        this.bibNumber = bibNumber;
+        this.entryFee = entryFee;
+        amountPaid = 0;
     }
 
-    static String describeContext(
-            String accessorContext) {
+    public double getBalanceDue() {
+        return entryFee - amountPaid;
+    }
 
-        String[] words =
-            accessorContext.toLowerCase().split("_");
+    public void announce() {
+        System.out.println("Race Entry | Bib: " + bibNumber
+                + " | Balance: " + getBalanceDue());
+    }
+}
 
-        String result = "";
+class RunnerEntry extends RaceEntry {
+    protected String category;
 
-        for (String word : words) {
+    public RunnerEntry(String bibNumber, double entryFee,
+                       String category) {
+        super(bibNumber, entryFee);
+        this.category = category;
+    }
 
-            result +=
-                Character.toUpperCase(word.charAt(0)) +
-                word.substring(1) +
-                " ";
-        }
+    @Override
+    public void announce() {
+        System.out.println("Runner Entry | Bib: " + bibNumber
+                + " | Category: " + category
+                + " | Balance: " + getBalanceDue());
+    }
+}
 
-        return result.trim();
+class EliteRunnerEntry extends RunnerEntry {
+    private double sponsorBonus;
+
+    public EliteRunnerEntry(String bibNumber, double entryFee,
+                            String category, double sponsorBonus) {
+        super(bibNumber, entryFee, category);
+        this.sponsorBonus = sponsorBonus;
+    }
+
+    @Override
+    public void announce() {
+        System.out.println("Elite Runner | Bib: " + bibNumber
+                + " | Category: " + category
+                + " | Sponsor Bonus: " + sponsorBonus
+                + " | Balance: " + getBalanceDue());
+    }
+}
+
+class RelayTeamEntry extends RaceEntry {
+    private int teamSize;
+
+    public RelayTeamEntry(String bibNumber, double entryFee,
+                          int teamSize) {
+        super(bibNumber, entryFee);
+        this.teamSize = teamSize;
+    }
+
+    @Override
+    public void announce() {
+        System.out.println("Relay Team | Bib: " + bibNumber
+                + " | Team Size: " + teamSize
+                + " | Balance: " + getBalanceDue());
     }
 }
 
 public class Problem2 {
+    static String classifyGeneration(RaceEntry entry) {
+        if (entry instanceof EliteRunnerEntry) {
+            return "Multilevel descendant (3 generations deep)";
+        } else if (entry instanceof RelayTeamEntry) {
+            return "Hierarchical sibling (independent branch)";
+        } else {
+            return "Base or direct descendant";
+        }
+    }
 
-    public static void main(String[] args) {
+    static double getTotalBalanceDue(RaceEntry[] entries) {
+        double total = 0;
 
-        Scanner sc = new Scanner(System.in);
-
-        System.out.print("Enter number of attempts: ");
-        int n = sc.nextInt();
-        sc.nextLine();
-
-        for (int i = 0; i < n; i++) {
-
-            System.out.println("\nAttempt " + (i + 1));
-
-            System.out.print("Enter modifier: ");
-            String modifier = sc.nextLine();
-
-            System.out.print("Enter context: ");
-            String context = sc.nextLine();
-
-            String result =
-                AccessChecker2.classifyAccess(
-                    modifier,
-                    context
-                );
-
-            System.out.println(
-                "Result: " + result
-            );
-
-            System.out.println(
-                "Context: " +
-                AccessChecker2.describeContext(context)
-            );
+        for (int i = 0; i < entries.length; i++) {
+            total += entries[i].getBalanceDue();
         }
 
-        sc.close();
+        return total;
+    }
+
+    public static void main(String[] args) {
+        RunnerEntry runner =
+                new RunnerEntry("BIB2001", 80, "Open 10K");
+
+        EliteRunnerEntry elite =
+                new EliteRunnerEntry("BIB3001", 150,
+                        "Elite Full Marathon", 500);
+
+        RelayTeamEntry relay =
+                new RelayTeamEntry("BIB4001", 300, 4);
+
+        runner.announce();
+        elite.announce();
+        relay.announce();
+
+        System.out.println(classifyGeneration(elite));
+        System.out.println(classifyGeneration(relay));
+
+        RaceEntry[] entries = {runner, elite, relay};
+        System.out.println(getTotalBalanceDue(entries));
     }
 }

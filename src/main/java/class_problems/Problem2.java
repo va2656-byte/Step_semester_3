@@ -1,93 +1,124 @@
-import java.util.*;
+class EventTicket {
+    protected String attendeeId;
+    protected double basePrice;
+    protected double amountPaid;
 
-class AccessRuleEngine2 {
-
-    static String classifyAccess(String fieldModifier,
-                                  String accessorContext) {
-
-        if (fieldModifier.equals("private")) {
-            return accessorContext.equals("SAME_CLASS")
-                    ? "ALLOWED" : "DENIED";
+    public EventTicket(String attendeeId, double basePrice) {
+        if (attendeeId == null || attendeeId.trim().length() < 4) {
+            throw new IllegalArgumentException("Invalid attendee ID");
         }
 
-        if (fieldModifier.equals("default")) {
-            return accessorContext.equals("SAME_CLASS")
-                    || accessorContext.equals("SAME_PACKAGE")
-                    ? "ALLOWED" : "DENIED";
-        }
-
-        if (fieldModifier.equals("protected")) {
-
-            if (accessorContext.equals("SAME_CLASS")
-                    || accessorContext.equals("SAME_PACKAGE")
-                    || accessorContext.equals(
-                    "SUBCLASS_DIFFERENT_PACKAGE_OWN_TYPE")) {
-                return "ALLOWED";
-            }
-
-            return "DENIED";
-        }
-
-        if (fieldModifier.equals("public")) {
-            return "ALLOWED";
-        }
-
-        return "DENIED";
+        this.attendeeId = attendeeId;
+        this.basePrice = basePrice;
+        amountPaid = 0;
     }
 
-    static String describeContext(String accessorContext) {
+    public double getBalanceDue() {
+        return basePrice - amountPaid;
+    }
 
-        String[] words =
-                accessorContext.toLowerCase().split("_");
+    public void printTicket() {
+        System.out.println("Standard Event Ticket | Balance Due: "
+                + getBalanceDue());
+    }
+}
 
-        String result = "";
+class WorkshopTicket extends EventTicket {
+    protected String track;
 
-        for (String word : words) {
+    public WorkshopTicket(String attendeeId, double basePrice,
+                          String track) {
+        super(attendeeId, basePrice);
+        this.track = track;
+    }
 
-            result += Character.toUpperCase(word.charAt(0))
-                    + word.substring(1)
-                    + " ";
-        }
+    @Override
+    public void printTicket() {
+        System.out.println("Workshop Ticket | Track: " + track
+                + " | Balance Due: " + getBalanceDue());
+    }
+}
 
-        return result.trim();
+class PremiumWorkshopTicket extends WorkshopTicket {
+    private double kitFee;
+
+    public PremiumWorkshopTicket(String attendeeId, double basePrice,
+                                 String track, double kitFee) {
+        super(attendeeId, basePrice, track);
+        this.kitFee = kitFee;
+    }
+
+    @Override
+    public void printTicket() {
+        System.out.println("Premium Workshop Ticket | Track: "
+                + track + " | Kit Fee: " + kitFee
+                + " | Balance Due: " + getBalanceDue());
+    }
+}
+
+class HackathonTicket extends EventTicket {
+    private String teamName;
+
+    public HackathonTicket(String attendeeId, double basePrice,
+                           String teamName) {
+        super(attendeeId, basePrice);
+        this.teamName = teamName;
+    }
+
+    @Override
+    public void printTicket() {
+        System.out.println("Hackathon Ticket | Team: " + teamName
+                + " | Balance Due: " + getBalanceDue());
     }
 }
 
 public class Problem2 {
+    static String classifyGeneration(EventTicket ticket) {
+        if (ticket instanceof PremiumWorkshopTicket) {
+            return "Multilevel descendant (3 generations deep)";
+        } else if (ticket instanceof HackathonTicket) {
+            return "Hierarchical sibling (independent branch)";
+        } else {
+            return "Base or direct descendant";
+        }
+    }
 
-    public static void main(String[] args) {
+    static double getTotalBalanceDue(EventTicket[] tickets) {
+        double total = 0;
 
-        Scanner sc = new Scanner(System.in);
-
-        System.out.print("Enter number of attempts: ");
-        int n = sc.nextInt();
-        sc.nextLine();
-
-        for (int i = 0; i < n; i++) {
-
-            System.out.println("\nAttempt " + (i + 1));
-
-            System.out.print(
-                    "Enter modifier: ");
-            String modifier = sc.nextLine();
-
-            System.out.print(
-                    "Enter context: ");
-            String context = sc.nextLine();
-
-            String result =
-                    AccessRuleEngine2.classifyAccess(
-                            modifier,
-                            context);
-
-            System.out.println("Result: " + result);
-
-            System.out.println(
-                    "Description: " +
-                    AccessRuleEngine2.describeContext(
-                            context));
+        for (int i = 0; i < tickets.length; i++) {
+            total += tickets[i].getBalanceDue();
         }
 
-        sc.close();
+        return total;
+    }
+
+    public static void main(String[] args) {
+        EventTicket standard =
+                new EventTicket("STU1", 500);
+
+        WorkshopTicket workshop =
+                new WorkshopTicket("STU2", 1200, "AI/ML");
+
+        PremiumWorkshopTicket premium =
+                new PremiumWorkshopTicket(
+                        "STU3", 2000, "Cloud Native", 300);
+
+        HackathonTicket hackathon =
+                new HackathonTicket("STU4", 800, "Byte Force");
+
+        standard.printTicket();
+        workshop.printTicket();
+        premium.printTicket();
+        hackathon.printTicket();
+
+        System.out.println(classifyGeneration(premium));
+        System.out.println(classifyGeneration(hackathon));
+
+        EventTicket[] tickets = {
+            standard, workshop, premium, hackathon
+        };
+
+        System.out.println(getTotalBalanceDue(tickets));
     }
 }

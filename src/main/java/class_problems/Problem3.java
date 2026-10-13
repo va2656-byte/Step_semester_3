@@ -1,116 +1,82 @@
-import java.util.*;
+import java.util.Arrays;
 
-class PatientVitals {
+class EventTicket {
+    protected String attendeeId;
+    protected double basePrice;
+    protected double amountPaid;
 
-    private double[] readings;
-    private int count;
+    private double[] lateFeeHistory = new double[10];
+    private int lateFeeCount = 0;
 
-    public PatientVitals(double[] initialReadings) {
+    public EventTicket(String attendeeId, double basePrice) {
+        if (attendeeId == null || attendeeId.trim().length() < 4) {
+            throw new IllegalArgumentException("Invalid attendee ID");
+        }
 
-        readings = new double[500];
-        count = 0;
+        this.attendeeId = attendeeId;
+        this.basePrice = basePrice;
+        amountPaid = 0;
+    }
 
-        for (double reading : initialReadings) {
-            recordReading(reading);
+    public void pay(double amount) {
+        if (amount > 0) {
+            amountPaid += amount;
         }
     }
 
-    public void recordReading(double reading) {
-
-        if (reading <= 0 || reading > 45) {
-            return;
-        }
-
-        if (count < readings.length) {
-            readings[count] = reading;
-            count++;
+    protected void applyLateFee(double amount) {
+        if (lateFeeCount < lateFeeHistory.length) {
+            lateFeeHistory[lateFeeCount] = amount;
+            lateFeeCount++;
         }
     }
 
-    public double getAverage() {
-
-        if (count == 0) {
-            return 0.0;
-        }
-
-        double sum = 0;
-
-        for (int i = 0; i < count; i++) {
-            sum += readings[i];
-        }
-
-        return sum / count;
+    public double[] getLateFeeHistory() {
+        return Arrays.copyOf(lateFeeHistory, lateFeeCount);
     }
 
-    public double[] getAllReadings() {
+    public double getBalanceDue() {
+        double total = 0;
 
-        double[] copy = new double[count];
-
-        for (int i = 0; i < count; i++) {
-            copy[i] = readings[i];
+        for (int i = 0; i < lateFeeCount; i++) {
+            total += lateFeeHistory[i];
         }
 
-        return copy;
+        return basePrice - amountPaid + total;
+    }
+}
+
+class WorkshopTicket extends EventTicket {
+    private String track;
+
+    public WorkshopTicket(String attendeeId, double basePrice,
+                          String track) {
+        super(attendeeId, basePrice);
+        this.track = track;
+    }
+
+    @Override
+    protected void applyLateFee(double amount) {
+        super.applyLateFee(amount * 2);
     }
 }
 
 public class Problem3 {
-
     public static void main(String[] args) {
+        WorkshopTicket w =
+                new WorkshopTicket("STU2", 1200, "AI/ML");
 
-        Scanner sc = new Scanner(System.in);
+        w.pay(1200);
+        w.applyLateFee(100);
 
-        System.out.print("Enter number of initial readings: ");
-        int n = sc.nextInt();
+        System.out.println(w.getBalanceDue());
 
-        double[] initialReadings =
-                new double[n];
+        double[] history = w.getLateFeeHistory();
+        System.out.println(Arrays.toString(history));
 
-        for (int i = 0; i < n; i++) {
-
-            System.out.print(
-                    "Enter reading " + (i + 1) + ": ");
-
-            initialReadings[i] =
-                    sc.nextDouble();
-        }
-
-        PatientVitals v =
-                new PatientVitals(initialReadings);
-
-        System.out.println("\nValid readings:");
-
-        double[] result =
-                v.getAllReadings();
-
-        for (double reading : result) {
-            System.out.println(reading);
-        }
+        history[0] = 999;
 
         System.out.println(
-                "Average: " + v.getAverage());
-
-        System.out.print(
-                "\nEnter another reading: ");
-
-        double newReading =
-                sc.nextDouble();
-
-        v.recordReading(newReading);
-
-        System.out.println(
-                "Updated readings:");
-
-        result = v.getAllReadings();
-
-        for (double reading : result) {
-            System.out.println(reading);
-        }
-
-        System.out.println(
-                "Updated average: " +
-                v.getAverage());
-
-        sc.close();
+                Arrays.toString(w.getLateFeeHistory()));
     }
 }

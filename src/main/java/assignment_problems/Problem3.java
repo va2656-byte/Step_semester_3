@@ -1,97 +1,81 @@
-import java.util.*;
+import java.util.Arrays;
 
-class BookInventory {
+class RaceEntry {
+    protected String bibNumber;
+    protected double entryFee;
+    protected double amountPaid;
 
-    private int copiesTotal;
-    private int copiesAvailable;
+    private double[] lateFeeHistory = new double[10];
+    private int lateFeeCount = 0;
 
-    public BookInventory(int copiesTotal) {
-
-        if (copiesTotal <= 0) {
-            throw new IllegalArgumentException(
-                "Copies total must be positive"
-            );
+    public RaceEntry(String bibNumber, double entryFee) {
+        if (bibNumber == null || bibNumber.trim().length() < 4) {
+            throw new IllegalArgumentException("Invalid bib number");
         }
 
-        this.copiesTotal = copiesTotal;
-        this.copiesAvailable = copiesTotal;
+        this.bibNumber = bibNumber;
+        this.entryFee = entryFee;
     }
 
-    public void checkOut() {
-
-        if (copiesAvailable > 0) {
-            copiesAvailable--;
-        }
-    }
-
-    public void checkIn() {
-
-        if (copiesAvailable < copiesTotal) {
-            copiesAvailable++;
+    public void pay(double amount) {
+        if (amount > 0) {
+            amountPaid += amount;
         }
     }
 
-    public int getCopiesAvailable() {
-        return copiesAvailable;
+    protected void applyLateFee(double amount) {
+        if (lateFeeCount < lateFeeHistory.length) {
+            lateFeeHistory[lateFeeCount] = amount;
+            lateFeeCount++;
+        }
+    }
+
+    public double[] getLateFeeHistory() {
+        return Arrays.copyOf(lateFeeHistory, lateFeeCount);
+    }
+
+    public double getBalanceDue() {
+        double total = 0;
+
+        for (int i = 0; i < lateFeeCount; i++) {
+            total += lateFeeHistory[i];
+        }
+
+        return entryFee - amountPaid + total;
+    }
+}
+
+class RunnerEntry extends RaceEntry {
+    private String category;
+
+    public RunnerEntry(String bibNumber, double entryFee,
+                       String category) {
+        super(bibNumber, entryFee);
+        this.category = category;
+    }
+
+    @Override
+    protected void applyLateFee(double amount) {
+        super.applyLateFee(amount * 2);
     }
 }
 
 public class Problem3 {
-
     public static void main(String[] args) {
+        RunnerEntry r =
+                new RunnerEntry("BIB2001", 80, "Open 10K");
 
-        Scanner sc = new Scanner(System.in);
+        r.pay(30);
+        r.applyLateFee(20);
 
-        System.out.print("Enter total copies: ");
-        int total = sc.nextInt();
+        System.out.println(r.getBalanceDue());
 
-        try {
+        double[] history = r.getLateFeeHistory();
+        System.out.println(Arrays.toString(history));
 
-            BookInventory book =
-                new BookInventory(total);
+        history[0] = 999;
 
-            System.out.println(
-                "Available copies: " +
-                book.getCopiesAvailable()
-            );
-
-            System.out.print(
-                "Enter number of checkouts: "
-            );
-
-            int checkout = sc.nextInt();
-
-            for (int i = 0; i < checkout; i++) {
-                book.checkOut();
-            }
-
-            System.out.println(
-                "After checkout: " +
-                book.getCopiesAvailable()
-            );
-
-            System.out.print(
-                "Enter number of check-ins: "
-            );
-
-            int checkin = sc.nextInt();
-
-            for (int i = 0; i < checkin; i++) {
-                book.checkIn();
-            }
-
-            System.out.println(
-                "After check-in: " +
-                book.getCopiesAvailable()
-            );
-
-        } catch (Exception e) {
-
-            System.out.println(
-                "Construction rejected"
-            );
-        }
-
-        sc.close();
+        System.out.println(
+                Arrays.toString(r.getLateFeeHistory()));
     }
 }
