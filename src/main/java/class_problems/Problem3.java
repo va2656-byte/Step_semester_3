@@ -1,82 +1,80 @@
-import java.util.Arrays;
-
-class EventTicket {
-    protected String attendeeId;
-    protected double basePrice;
-    protected double amountPaid;
-
-    private double[] lateFeeHistory = new double[10];
-    private int lateFeeCount = 0;
-
-    public EventTicket(String attendeeId, double basePrice) {
-        if (attendeeId == null || attendeeId.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid attendee ID");
-        }
-
-        this.attendeeId = attendeeId;
-        this.basePrice = basePrice;
-        amountPaid = 0;
-    }
-
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
-    }
-
-    protected void applyLateFee(double amount) {
-        if (lateFeeCount < lateFeeHistory.length) {
-            lateFeeHistory[lateFeeCount] = amount;
-            lateFeeCount++;
-        }
-    }
-
-    public double[] getLateFeeHistory() {
-        return Arrays.copyOf(lateFeeHistory, lateFeeCount);
-    }
-
-    public double getBalanceDue() {
-        double total = 0;
-
-        for (int i = 0; i < lateFeeCount; i++) {
-            total += lateFeeHistory[i];
-        }
-
-        return basePrice - amountPaid + total;
-    }
-}
-
-class WorkshopTicket extends EventTicket {
-    private String track;
-
-    public WorkshopTicket(String attendeeId, double basePrice,
-                          String track) {
-        super(attendeeId, basePrice);
-        this.track = track;
-    }
-
-    @Override
-    protected void applyLateFee(double amount) {
-        super.applyLateFee(amount * 2);
-    }
-}
-
 public class Problem3 {
+
+    interface Auditable {
+        String auditRecord();
+    }
+
+    static abstract class StaffMember {
+        private double baseSalary;
+        protected double bonusRate;
+
+        StaffMember(double baseSalary) {
+            this(baseSalary, 0.10);
+        }
+
+        StaffMember(double baseSalary, double bonusRate) {
+            if (baseSalary < 0 || bonusRate < 0) {
+                throw new IllegalArgumentException();
+            }
+            this.baseSalary = baseSalary;
+            this.bonusRate = bonusRate;
+        }
+
+        public abstract double calculateBonus();
+
+        public double getSalary() {
+            return baseSalary;
+        }
+
+        public void setSalary(double baseSalary) {
+            if (baseSalary >= 0) {
+                this.baseSalary = baseSalary;
+            }
+        }
+    }
+
+    static class TeamLead extends StaffMember implements Auditable {
+        private int teamSize;
+
+        TeamLead(double baseSalary, int teamSize) {
+            super(baseSalary);
+            this.teamSize = teamSize;
+        }
+
+        TeamLead(double baseSalary, double bonusRate, int teamSize) {
+            super(baseSalary, bonusRate);
+            this.teamSize = teamSize;
+        }
+
+        public double calculateBonus() {
+            return getSalary() * bonusRate;
+        }
+
+        public String auditRecord() {
+            return "TeamLead audit: " + teamSize
+                    + " team members, salary $" + getSalary();
+        }
+    }
+
+    static String getAuditIfApplicable(StaffMember s) {
+        if (s instanceof Auditable) {
+            Auditable a = (Auditable) s;
+            return a.auditRecord();
+        }
+        return "No audit required";
+    }
+
     public static void main(String[] args) {
-        WorkshopTicket w =
-                new WorkshopTicket("STU2", 1200, "AI/ML");
+        TeamLead t = new TeamLead(60000, 5);
+        System.out.println(t.calculateBonus());
 
-        w.pay(1200);
-        w.applyLateFee(100);
+        TeamLead t2 = new TeamLead(60000, 0.20, 5);
+        System.out.println(t2.calculateBonus());
 
-        System.out.println(w.getBalanceDue());
+        t.setSalary(-5000);
+        System.out.println(t.getSalary());
 
-        double[] history = w.getLateFeeHistory();
-        System.out.println(Arrays.toString(history));
-
-        history[0] = 999;
-
-        System.out.println(
-                Arrays.toString(w.getLateFeeHistory()));
+        StaffMember ref = t;
+        System.out.println(getAuditIfApplicable(ref));
     }
 }

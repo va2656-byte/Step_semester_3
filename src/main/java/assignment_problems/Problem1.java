@@ -1,72 +1,74 @@
-class RaceEntry {
-    protected String bibNumber;
-    protected double entryFee;
-    protected double amountPaid;
 
-    public RaceEntry(String bibNumber, double entryFee) {
-        if (bibNumber == null || bibNumber.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid bib number");
-        }
+abstract class Shape {
+    private static int count = 0;
+    private final String shapeId;
 
-        this.bibNumber = bibNumber;
-        this.entryFee = entryFee;
-        amountPaid = 0;
+    Shape() {
+        shapeId = "SH-" + (++count);
     }
 
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
+    public abstract double calculateArea();
+
+    public void scale(double factor) {
+        scale(factor, factor);
     }
 
-    public double getBalanceDue() {
-        return entryFee - amountPaid;
+    public void scale(double xFactor, double yFactor) {
+        // Overridden by subclasses
     }
 
-    public static String registerBatch(String[] bibNumbers,
-                                       double entryFee) {
-        int registered = 0;
-        int rejected = 0;
-
-        for (int i = 0; i < bibNumbers.length; i++) {
-            try {
-                new RaceEntry(bibNumbers[i], entryFee);
-                registered++;
-            } catch (IllegalArgumentException e) {
-                rejected++;
-            }
-        }
-
-        return "Registered: " + registered
-                + " | Rejected: " + rejected;
+    public String getShapeId() {
+        return shapeId;
     }
 }
 
-class RunnerEntry extends RaceEntry {
-    private String category;
+class CircleShape extends Shape {
+    private double radius;
 
-    public RunnerEntry(String bibNumber, double entryFee,
-                       String category) {
-        super(bibNumber, entryFee);
-        this.category = category;
+    public CircleShape(double radius) {
+        this.radius = radius;
+    }
+
+    public double calculateArea() {
+        return Math.PI * radius * radius;
+    }
+
+    public void scale(double xFactor, double yFactor) {
+        radius *= Math.sqrt(xFactor * yFactor);
+    }
+}
+
+class SquareShape extends Shape {
+    private double side;
+
+    public SquareShape(double side) {
+        this.side = side;
+    }
+
+    public double calculateArea() {
+        return side * side;
+    }
+
+    public void scale(double xFactor, double yFactor) {
+        side *= Math.sqrt(xFactor * yFactor);
     }
 }
 
 public class Problem1 {
+    static void printArea(Shape s) {
+        System.out.println(s.calculateArea());
+    }
+
     public static void main(String[] args) {
-        RunnerEntry r =
-                new RunnerEntry("BIB2001", 80, "Open 10K");
+        CircleShape c = new CircleShape(5.0);
+        SquareShape sq = new SquareShape(4.0);
 
-        r.pay(30);
-        System.out.println(r.getBalanceDue());
+        System.out.printf("%.2f%n", c.calculateArea());
+        System.out.println(sq.calculateArea());
 
-        System.out.println(RaceEntry.registerBatch(
-                new String[]{"BIB1", "B1", "BIB2"}, 80));
+        sq.scale(2.0);
+        System.out.println(sq.calculateArea());
 
-        try {
-            new RaceEntry("B1", 50);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Construction rejected");
-        }
+        printArea(c);
     }
 }

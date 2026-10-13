@@ -1,132 +1,110 @@
-class EventTicket {
-    protected double basePrice;
-    protected double amountPaid;
-
-    private static int ticketsIssued = 1000;
-    private final String ticketId;
-
-    public EventTicket(double basePrice) {
-        if (basePrice <= 0) {
-            throw new IllegalArgumentException("Invalid base price");
-        }
-
-        this.basePrice = basePrice;
-        amountPaid = 0;
-
-        ticketsIssued++;
-        ticketId = "TCK-" + ticketsIssued;
-    }
-
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
-    }
-
-    public void pay(double amount, String mode) {
-        System.out.println("Paying via " + mode);
-        pay(amount);
-    }
-
-    public double getBalanceDue() {
-        return basePrice - amountPaid;
-    }
-
-    public String getTicketId() {
-        return ticketId;
-    }
-
-    public static int getTicketsIssued() {
-        return ticketsIssued - 1000;
-    }
-
-    public static boolean isValidPromoCode(String code) {
-        if (code == null || code.length() != 5) {
-            return false;
-        }
-
-        if (code.charAt(0) != 'F') {
-            return false;
-        }
-
-        if (!Character.isDigit(code.charAt(1))
-                || !Character.isDigit(code.charAt(2))
-                || !Character.isDigit(code.charAt(3))) {
-            return false;
-        }
-
-        return Character.isUpperCase(code.charAt(4))
-                && Character.isLetter(code.charAt(4));
-    }
-
-    public static String processNightlySettlement(
-            EventTicket[] tickets) {
-        int processed = 0;
-        int nullSkipped = 0;
-        int group = 0;
-        int individual = 0;
-
-        for (int i = 0; i < tickets.length; i++) {
-            if (tickets[i] == null) {
-                nullSkipped++;
-            } else {
-                processed++;
-
-                if (tickets[i] instanceof GroupTicket) {
-                    group++;
-                } else {
-                    individual++;
-                }
-            }
-        }
-
-        return processed + " processed | "
-                + nullSkipped + " null skipped | "
-                + group + " group | "
-                + individual + " individual";
-    }
-}
-
-class GroupTicket extends EventTicket {
-    private int groupSize;
-
-    public GroupTicket(double basePrice, int groupSize) {
-        super(basePrice);
-
-        if (groupSize <= 0) {
-            throw new IllegalArgumentException("Invalid group size");
-        }
-
-        this.groupSize = groupSize;
-    }
-}
-
 public class Problem5 {
+
+    interface Renewable {
+        String renew();
+    }
+
+    interface Reservable {
+        String reserve();
+    }
+
+    static abstract class LibraryItem {
+        private final String itemId;
+        private static int counter = 1001;
+
+        LibraryItem() {
+            itemId = "LIB-" + counter++;
+        }
+
+        public abstract int getLoanPeriodDays();
+
+        public String getItemId() {
+            return itemId;
+        }
+    }
+
+    static class Textbook extends LibraryItem
+            implements Renewable, Reservable {
+        private String title;
+
+        Textbook(String title) {
+            this.title = title;
+        }
+
+        public int getLoanPeriodDays() {
+            return 14;
+        }
+
+        public String renew() {
+            return title + " renewed";
+        }
+
+        public String reserve() {
+            return title + " reserved";
+        }
+    }
+
+    static class Magazine extends LibraryItem implements Renewable {
+        private String title;
+
+        Magazine(String title) {
+            this.title = title;
+        }
+
+        public int getLoanPeriodDays() {
+            return 7;
+        }
+
+        public String renew() {
+            return title + " renewed";
+        }
+    }
+
+    static class DigitalPass implements Renewable {
+        private String resourceName;
+
+        DigitalPass(String resourceName) {
+            this.resourceName = resourceName;
+        }
+
+        public String renew() {
+            return resourceName + " renewed";
+        }
+    }
+
+    static void processCheckouts(LibraryItem[] items) {
+        for (LibraryItem item : items) {
+            System.out.println(item.getItemId() + ": "
+                    + item.getLoanPeriodDays() + " days");
+        }
+    }
+
+    static String reserveIfSupported(Object o) {
+        if (o instanceof Reservable) {
+            Reservable r = (Reservable) o;
+            return r.reserve();
+        }
+        return "Reservation not supported";
+    }
+
     public static void main(String[] args) {
-        EventTicket t1 = new EventTicket(500);
+        Textbook t = new Textbook("Java Fundamentals");
+        Magazine m = new Magazine("Tech Monthly");
+        DigitalPass d = new DigitalPass("E-Journal Access");
 
-        System.out.println(t1.getTicketId());
-        System.out.println(EventTicket.getTicketsIssued());
+        System.out.println(t.getLoanPeriodDays());
+        System.out.println(t.renew());
+        System.out.println(t.reserve());
 
-        System.out.println(
-                EventTicket.isValidPromoCode("F123A"));
-        System.out.println(
-                EventTicket.isValidPromoCode("F12A"));
-        System.out.println(
-                EventTicket.isValidPromoCode("X123A"));
+        System.out.println(m.renew());
+        System.out.println(reserveIfSupported(m));
 
-        t1.pay(200);
-        t1.pay(200, "UPI");
+        System.out.println(d.renew());
+        System.out.println(reserveIfSupported(d));
 
-        System.out.println(t1.getBalanceDue());
+        LibraryItem ref = t;
+        System.out.println(reserveIfSupported(ref));
 
-        EventTicket[] tickets = {
-            new GroupTicket(2000, 5),
-            null,
-            new EventTicket(500)
-        };
-
-        System.out.println(
-                EventTicket.processNightlySettlement(tickets));
+        processCheckouts(new LibraryItem[]{t, m});
     }
 }

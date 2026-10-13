@@ -1,120 +1,58 @@
-class RaceEntry {
-    protected String bibNumber;
-    protected double entryFee;
-    protected double amountPaid;
 
-    public RaceEntry(String bibNumber, double entryFee) {
-        if (bibNumber == null || bibNumber.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid bib number");
-        }
+interface Exportable {
+    String exportData();
+}
 
-        this.bibNumber = bibNumber;
-        this.entryFee = entryFee;
-        amountPaid = 0;
+class ExportCounter {
+    static int totalExports = 0;
+}
+
+class ReportGenerator implements Exportable {
+    private String reportName;
+
+    public ReportGenerator(String reportName) {
+        this.reportName = reportName;
     }
 
-    public double getBalanceDue() {
-        return entryFee - amountPaid;
-    }
-
-    public void announce() {
-        System.out.println("Race Entry | Bib: " + bibNumber
-                + " | Balance: " + getBalanceDue());
+    public String exportData() {
+        ExportCounter.totalExports++;
+        return "Exported report: " + reportName;
     }
 }
 
-class RunnerEntry extends RaceEntry {
-    protected String category;
+class UserProfile implements Exportable {
+    private String username;
 
-    public RunnerEntry(String bibNumber, double entryFee,
-                       String category) {
-        super(bibNumber, entryFee);
-        this.category = category;
+    public UserProfile(String username) {
+        this.username = username;
     }
 
-    @Override
-    public void announce() {
-        System.out.println("Runner Entry | Bib: " + bibNumber
-                + " | Category: " + category
-                + " | Balance: " + getBalanceDue());
-    }
-}
-
-class EliteRunnerEntry extends RunnerEntry {
-    private double sponsorBonus;
-
-    public EliteRunnerEntry(String bibNumber, double entryFee,
-                            String category, double sponsorBonus) {
-        super(bibNumber, entryFee, category);
-        this.sponsorBonus = sponsorBonus;
-    }
-
-    @Override
-    public void announce() {
-        System.out.println("Elite Runner | Bib: " + bibNumber
-                + " | Category: " + category
-                + " | Sponsor Bonus: " + sponsorBonus
-                + " | Balance: " + getBalanceDue());
-    }
-}
-
-class RelayTeamEntry extends RaceEntry {
-    private int teamSize;
-
-    public RelayTeamEntry(String bibNumber, double entryFee,
-                          int teamSize) {
-        super(bibNumber, entryFee);
-        this.teamSize = teamSize;
-    }
-
-    @Override
-    public void announce() {
-        System.out.println("Relay Team | Bib: " + bibNumber
-                + " | Team Size: " + teamSize
-                + " | Balance: " + getBalanceDue());
+    public String exportData() {
+        ExportCounter.totalExports++;
+        return "Exported profile: " + username;
     }
 }
 
 public class Problem2 {
-    static String classifyGeneration(RaceEntry entry) {
-        if (entry instanceof EliteRunnerEntry) {
-            return "Multilevel descendant (3 generations deep)";
-        } else if (entry instanceof RelayTeamEntry) {
-            return "Hierarchical sibling (independent branch)";
-        } else {
-            return "Base or direct descendant";
-        }
+    static int getTotalExports() {
+        return ExportCounter.totalExports;
     }
 
-    static double getTotalBalanceDue(RaceEntry[] entries) {
-        double total = 0;
-
-        for (int i = 0; i < entries.length; i++) {
-            total += entries[i].getBalanceDue();
+    static void exportAll(Exportable[] items) {
+        for (Exportable item : items) {
+            System.out.println(item.exportData());
         }
-
-        return total;
     }
 
     public static void main(String[] args) {
-        RunnerEntry runner =
-                new RunnerEntry("BIB2001", 80, "Open 10K");
+        ReportGenerator r = new ReportGenerator("Sales Q1");
+        UserProfile u = new UserProfile("jane_doe");
 
-        EliteRunnerEntry elite =
-                new EliteRunnerEntry("BIB3001", 150,
-                        "Elite Full Marathon", 500);
+        System.out.println(r.exportData());
+        System.out.println(u.exportData());
 
-        RelayTeamEntry relay =
-                new RelayTeamEntry("BIB4001", 300, 4);
+        exportAll(new Exportable[]{r, u});
 
-        runner.announce();
-        elite.announce();
-        relay.announce();
-
-        System.out.println(classifyGeneration(elite));
-        System.out.println(classifyGeneration(relay));
-
-        RaceEntry[] entries = {runner, elite, relay};
-        System.out.println(getTotalBalanceDue(entries));
+        System.out.println(getTotalExports());
     }
 }

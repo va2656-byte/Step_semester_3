@@ -1,81 +1,72 @@
-import java.util.Arrays;
 
-class RaceEntry {
-    protected String bibNumber;
-    protected double entryFee;
-    protected double amountPaid;
+abstract class ServiceableVehicle {
+    private double mileage;
 
-    private double[] lateFeeHistory = new double[10];
-    private int lateFeeCount = 0;
+    public abstract String performMaintenance();
 
-    public RaceEntry(String bibNumber, double entryFee) {
-        if (bibNumber == null || bibNumber.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid bib number");
-        }
-
-        this.bibNumber = bibNumber;
-        this.entryFee = entryFee;
+    public double getMileage() {
+        return mileage;
     }
 
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
+    public void addMileage(double km) {
+        if (km < 0) {
+            throw new IllegalArgumentException("Distance cannot be negative");
         }
-    }
-
-    protected void applyLateFee(double amount) {
-        if (lateFeeCount < lateFeeHistory.length) {
-            lateFeeHistory[lateFeeCount] = amount;
-            lateFeeCount++;
-        }
-    }
-
-    public double[] getLateFeeHistory() {
-        return Arrays.copyOf(lateFeeHistory, lateFeeCount);
-    }
-
-    public double getBalanceDue() {
-        double total = 0;
-
-        for (int i = 0; i < lateFeeCount; i++) {
-            total += lateFeeHistory[i];
-        }
-
-        return entryFee - amountPaid + total;
+        mileage += km;
     }
 }
 
-class RunnerEntry extends RaceEntry {
-    private String category;
+interface Insurable {
+    String getInsuranceInfo();
+}
 
-    public RunnerEntry(String bibNumber, double entryFee,
-                       String category) {
-        super(bibNumber, entryFee);
-        this.category = category;
+class Forklift extends ServiceableVehicle implements Insurable {
+    protected String assetTag;
+
+    public Forklift(String assetTag) {
+        this.assetTag = assetTag;
+    }
+
+    public String performMaintenance() {
+        return "Forklift " + assetTag
+                + ": hydraulic and fork inspection complete";
+    }
+
+    public String getInsuranceInfo() {
+        return "Insured under fleet policy - Asset " + assetTag;
+    }
+}
+
+class HeavyDutyForklift extends Forklift {
+    public HeavyDutyForklift(String assetTag) {
+        super(assetTag);
     }
 
     @Override
-    protected void applyLateFee(double amount) {
-        super.applyLateFee(amount * 2);
+    public String performMaintenance() {
+        return super.performMaintenance()
+                + " | high-pressure hydraulic check complete";
     }
 }
 
 public class Problem3 {
+    static String getInsuranceIfApplicable(ServiceableVehicle v) {
+        if (v instanceof Insurable) {
+            Insurable i = (Insurable) v;
+            return i.getInsuranceInfo();
+        }
+        return "No insurance record exists";
+    }
+
     public static void main(String[] args) {
-        RunnerEntry r =
-                new RunnerEntry("BIB2001", 80, "Open 10K");
+        Forklift f = new Forklift("FL-22");
+        f.addMileage(120);
 
-        r.pay(30);
-        r.applyLateFee(20);
+        System.out.println(f.getMileage());
+        System.out.println(f.performMaintenance());
+        System.out.println(getInsuranceIfApplicable(f));
 
-        System.out.println(r.getBalanceDue());
-
-        double[] history = r.getLateFeeHistory();
-        System.out.println(Arrays.toString(history));
-
-        history[0] = 999;
-
-        System.out.println(
-                Arrays.toString(r.getLateFeeHistory()));
+        HeavyDutyForklift hd = new HeavyDutyForklift("HD-9");
+        System.out.println(hd.performMaintenance());
     }
 }

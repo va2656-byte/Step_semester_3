@@ -1,124 +1,85 @@
-class EventTicket {
-    protected String attendeeId;
-    protected double basePrice;
-    protected double amountPaid;
-
-    public EventTicket(String attendeeId, double basePrice) {
-        if (attendeeId == null || attendeeId.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid attendee ID");
-        }
-
-        this.attendeeId = attendeeId;
-        this.basePrice = basePrice;
-        amountPaid = 0;
-    }
-
-    public double getBalanceDue() {
-        return basePrice - amountPaid;
-    }
-
-    public void printTicket() {
-        System.out.println("Standard Event Ticket | Balance Due: "
-                + getBalanceDue());
-    }
-}
-
-class WorkshopTicket extends EventTicket {
-    protected String track;
-
-    public WorkshopTicket(String attendeeId, double basePrice,
-                          String track) {
-        super(attendeeId, basePrice);
-        this.track = track;
-    }
-
-    @Override
-    public void printTicket() {
-        System.out.println("Workshop Ticket | Track: " + track
-                + " | Balance Due: " + getBalanceDue());
-    }
-}
-
-class PremiumWorkshopTicket extends WorkshopTicket {
-    private double kitFee;
-
-    public PremiumWorkshopTicket(String attendeeId, double basePrice,
-                                 String track, double kitFee) {
-        super(attendeeId, basePrice, track);
-        this.kitFee = kitFee;
-    }
-
-    @Override
-    public void printTicket() {
-        System.out.println("Premium Workshop Ticket | Track: "
-                + track + " | Kit Fee: " + kitFee
-                + " | Balance Due: " + getBalanceDue());
-    }
-}
-
-class HackathonTicket extends EventTicket {
-    private String teamName;
-
-    public HackathonTicket(String attendeeId, double basePrice,
-                           String teamName) {
-        super(attendeeId, basePrice);
-        this.teamName = teamName;
-    }
-
-    @Override
-    public void printTicket() {
-        System.out.println("Hackathon Ticket | Team: " + teamName
-                + " | Balance Due: " + getBalanceDue());
-    }
-}
-
 public class Problem2 {
-    static String classifyGeneration(EventTicket ticket) {
-        if (ticket instanceof PremiumWorkshopTicket) {
-            return "Multilevel descendant (3 generations deep)";
-        } else if (ticket instanceof HackathonTicket) {
-            return "Hierarchical sibling (independent branch)";
-        } else {
-            return "Base or direct descendant";
+
+    interface Alertable {
+        String sendAlert(String message);
+    }
+
+    static class SecuritySensor {
+        protected String zoneName;
+
+        SecuritySensor(String zoneName) {
+            this.zoneName = zoneName;
+        }
+
+        public String getZoneName() {
+            return zoneName;
         }
     }
 
-    static double getTotalBalanceDue(EventTicket[] tickets) {
-        double total = 0;
-
-        for (int i = 0; i < tickets.length; i++) {
-            total += tickets[i].getBalanceDue();
+    static class MotionSensor extends SecuritySensor implements Alertable {
+        MotionSensor(String zoneName) {
+            super(zoneName);
         }
 
-        return total;
+        public String sendAlert(String message) {
+            return "[" + zoneName + "] " + message;
+        }
+    }
+
+    static class DualZoneMotionSensor extends MotionSensor {
+        private String secondZoneName;
+
+        DualZoneMotionSensor(String zoneName, String secondZoneName) {
+            super(zoneName);
+            this.secondZoneName = secondZoneName;
+        }
+
+        public String sendAlert(String message) {
+            return super.sendAlert(message)
+                    + " [also covering " + secondZoneName + "]";
+        }
+    }
+
+    static class SmokeDetector implements Alertable {
+        private String deviceId;
+
+        SmokeDetector(String deviceId) {
+            this.deviceId = deviceId;
+        }
+
+        public String sendAlert(String message) {
+            return "[" + deviceId + "] " + message;
+        }
+    }
+
+    static void broadcastAll(Alertable[] devices, String message) {
+        for (Alertable device : devices) {
+            System.out.println(device.sendAlert(message));
+        }
+    }
+
+    static String getZoneIfMotionSensor(Alertable a) {
+        if (a instanceof MotionSensor) {
+            MotionSensor m = (MotionSensor) a;
+            return m.getZoneName();
+        }
+        return "Not a motion sensor";
     }
 
     public static void main(String[] args) {
-        EventTicket standard =
-                new EventTicket("STU1", 500);
+        MotionSensor m = new MotionSensor("Living Room");
+        DualZoneMotionSensor d =
+                new DualZoneMotionSensor("Hallway", "Stairwell");
+        SmokeDetector s = new SmokeDetector("SD-01");
 
-        WorkshopTicket workshop =
-                new WorkshopTicket("STU2", 1200, "AI/ML");
+        System.out.println(m.sendAlert("Motion detected"));
+        System.out.println(d.sendAlert("Motion detected"));
+        System.out.println(s.sendAlert("Smoke detected"));
 
-        PremiumWorkshopTicket premium =
-                new PremiumWorkshopTicket(
-                        "STU3", 2000, "Cloud Native", 300);
+        Alertable[] devices = {m, d, s};
+        broadcastAll(devices, "Emergency alert");
 
-        HackathonTicket hackathon =
-                new HackathonTicket("STU4", 800, "Byte Force");
-
-        standard.printTicket();
-        workshop.printTicket();
-        premium.printTicket();
-        hackathon.printTicket();
-
-        System.out.println(classifyGeneration(premium));
-        System.out.println(classifyGeneration(hackathon));
-
-        EventTicket[] tickets = {
-            standard, workshop, premium, hackathon
-        };
-
-        System.out.println(getTotalBalanceDue(tickets));
+        System.out.println(getZoneIfMotionSensor(m));
+        System.out.println(getZoneIfMotionSensor(s));
     }
 }

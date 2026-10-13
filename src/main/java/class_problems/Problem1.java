@@ -1,73 +1,58 @@
-class EventTicket {
-    protected String attendeeId;
-    protected double basePrice;
-    protected double amountPaid;
-
-    public EventTicket(String attendeeId, double basePrice) {
-        if (attendeeId == null || attendeeId.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid attendee ID");
-        }
-
-        this.attendeeId = attendeeId;
-        this.basePrice = basePrice;
-        amountPaid = 0;
-    }
-
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
-    }
-
-    public double getBalanceDue() {
-        return basePrice - amountPaid;
-    }
-
-    public static String registerBatch(String[] attendeeIds,
-                                       double basePrice) {
-        int registered = 0;
-        int rejected = 0;
-
-        for (int i = 0; i < attendeeIds.length; i++) {
-            try {
-                new EventTicket(attendeeIds[i], basePrice);
-                registered++;
-            } catch (IllegalArgumentException e) {
-                rejected++;
-            }
-        }
-
-        return "Registered: " + registered
-                + " | Rejected: " + rejected;
-    }
-}
-
-class WorkshopTicket extends EventTicket {
-    private String track;
-
-    public WorkshopTicket(String attendeeId, double basePrice,
-                          String track) {
-        super(attendeeId, basePrice);
-        this.track = track;
-    }
-}
-
 public class Problem1 {
-    public static void main(String[] args) {
-        WorkshopTicket w =
-                new WorkshopTicket("STU2", 1200, "AI/ML");
 
-        w.pay(500);
-        System.out.println(w.getBalanceDue());
+    static abstract class PaymentMethod {
+        private final String transactionId;
+        private static int counter = 1001;
 
-        System.out.println(EventTicket.registerBatch(
-                new String[]{"STU1", "ST1", "STU2", " ", "STU3"},
-                500));
-
-        try {
-            new EventTicket("ST1", 500);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Construction rejected");
+        PaymentMethod() {
+            transactionId = "TXN-" + counter++;
         }
+
+        public abstract String processPayment(double amount);
+
+        public String processPayment(double amount, String note) {
+            return processPayment(amount) + " (" + note + ")";
+        }
+
+        public String getTransactionId() {
+            return transactionId;
+        }
+    }
+
+    static class CreditCardPayment extends PaymentMethod {
+        private String cardNumberLastFour;
+
+        CreditCardPayment(String cardNumberLastFour) {
+            this.cardNumberLastFour = cardNumberLastFour;
+        }
+
+        public String processPayment(double amount) {
+            return "Charged $" + amount + " to card ending "
+                    + cardNumberLastFour + " - Txn " + getTransactionId();
+        }
+    }
+
+    static class CashPayment extends PaymentMethod {
+        public String processPayment(double amount) {
+            return "Received $" + amount + " in cash - Txn "
+                    + getTransactionId();
+        }
+    }
+
+    static void printConfirmation(PaymentMethod payment, double amount) {
+        System.out.println(payment.processPayment(amount));
+    }
+
+    public static void main(String[] args) {
+        CreditCardPayment cc = new CreditCardPayment("4471");
+        PaymentMethod ref = cc;
+
+        System.out.println(cc.processPayment(250.0));
+        System.out.println(cc.processPayment(250.0, "Birthday gift"));
+
+        CashPayment cash = new CashPayment();
+        System.out.println(cash.processPayment(40.0));
+
+        printConfirmation(ref, 250.0);
     }
 }

@@ -1,112 +1,80 @@
-class RaceEntry {
-    protected String bibNumber;
-    protected double entryFee;
-    protected double amountPaid;
 
-    public RaceEntry(String bibNumber, double entryFee) {
-        if (bibNumber == null || bibNumber.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid bib number");
-        }
+interface Attackable {
+    String attack();
+    String attack(String weaponName);
+}
 
-        this.bibNumber = bibNumber;
-        this.entryFee = entryFee;
+interface Defendable {
+    String defend();
+}
+
+abstract class GameCharacter {
+    private static int count = 0;
+    private final String characterId;
+
+    GameCharacter() {
+        characterId = "CH-" + (++count);
     }
 
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
-    }
+    public abstract String getSpecialMove();
 
-    public double getBalanceDue() {
-        return entryFee - amountPaid;
-    }
-
-    public String announce() {
-        return "Race Entry | Bib: " + bibNumber
-                + " | Balance: " + getBalanceDue();
+    public String getCharacterId() {
+        return characterId;
     }
 }
 
-class RunnerEntry extends RaceEntry {
-    private String category;
+class Warrior extends GameCharacter implements Attackable, Defendable {
+    private String name;
 
-    public RunnerEntry(String bibNumber, double entryFee,
-                       String category) {
-        super(bibNumber, entryFee);
-        this.category = category;
+    public Warrior(String name) {
+        this.name = name;
     }
 
-    @Override
-    public String announce() {
-        return "Runner Entry | Bib: " + bibNumber
-                + " | Category: " + category
-                + " | Balance: " + getBalanceDue();
+    public String attack() {
+        return name + " strikes with a blade";
+    }
+
+    public String attack(String weaponName) {
+        return name + " strikes with an " + weaponName;
+    }
+
+    public String defend() {
+        return name + " raises a shield";
+    }
+
+    public String getSpecialMove() {
+        return name + " unleashes Whirlwind Slash";
     }
 }
 
-class RelayTeamEntry extends RaceEntry {
-    private int teamSize;
+class Trap implements Defendable {
+    private String trapType;
 
-    public RelayTeamEntry(String bibNumber, double entryFee,
-                          int teamSize) {
-        super(bibNumber, entryFee);
-        this.teamSize = teamSize;
+    public Trap(String trapType) {
+        this.trapType = trapType;
     }
 
-    public int getTeamSize() {
-        return teamSize;
-    }
-
-    @Override
-    public String announce() {
-        return "Relay Team | Bib: " + bibNumber
-                + " | Team Size: " + teamSize
-                + " | Balance: " + getBalanceDue();
+    public String defend() {
+        return trapType + " triggers automatically";
     }
 }
 
 public class Problem4 {
-    static String announceAll(RaceEntry[] entries) {
-        StringBuilder report = new StringBuilder();
-
-        for (int i = 0; i < entries.length; i++) {
-            report.append(entries[i].announce()).append(" | ");
-
-            if (entries[i] instanceof RelayTeamEntry) {
-                RelayTeamEntry relay =
-                        (RelayTeamEntry) entries[i];
-
-                report.append("[Team size via downcast: ")
-                      .append(relay.getTeamSize())
-                      .append("] | ");
-            }
+    static void resolveDefense(Defendable[] combatants) {
+        for (Defendable c : combatants) {
+            System.out.println(c.defend());
         }
-
-        return report.toString();
     }
 
     public static void main(String[] args) {
-        RunnerEntry runner =
-                new RunnerEntry("BIB2001", 80, "Open 10K");
+        Warrior w = new Warrior("Kael");
+        Trap t = new Trap("Spike Pit");
 
-        runner.pay(30);
-        runner.pay(20);
+        System.out.println(w.attack());
+        System.out.println(w.attack("Iron Sword"));
+        System.out.println(w.defend());
+        System.out.println(w.getSpecialMove());
 
-        RelayTeamEntry relay =
-                new RelayTeamEntry("BIB4001", 300, 4);
-
-        RaceEntry[] fleet = {runner, relay};
-
-        System.out.println(announceAll(fleet));
-
-        RaceEntry plain = new RaceEntry("BIB5001", 50);
-
-        if (plain instanceof RelayTeamEntry) {
-            RelayTeamEntry bad = (RelayTeamEntry) plain;
-            System.out.println(bad.getTeamSize());
-        } else {
-            System.out.println("Entry is not a relay team");
-        }
+        resolveDefense(new Defendable[]{w, t});
     }
 }

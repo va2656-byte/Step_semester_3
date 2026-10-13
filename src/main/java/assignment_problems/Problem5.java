@@ -1,155 +1,108 @@
-class RaceEntry {
-    protected String bibNumber;
-    protected double entryFee;
-    protected double amountPaid;
 
-    private static int bibCounter = 0;
-    private final String entryCode;
+abstract class HomeDevice {
+    private static int count = 1000;
+    private final String serialNumber;
 
-    public RaceEntry(String bibNumber, double entryFee) {
-        if (bibNumber == null || bibNumber.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid bib number");
-        }
-
-        if (entryFee <= 0) {
-            throw new IllegalArgumentException("Invalid entry fee");
-        }
-
-        this.bibNumber = bibNumber;
-        this.entryFee = entryFee;
-        this.amountPaid = 0;
-
-        bibCounter++;
-        entryCode = "ENTRY" + bibCounter;
+    HomeDevice() {
+        serialNumber = "HD-" + (++count);
     }
 
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
-    }
+    public abstract String activate();
 
-    public void pay(double amount, String mode) {
-        pay(amount);
-        System.out.println("Paying via " + mode);
-    }
-
-    public double getBalanceDue() {
-        return entryFee - amountPaid;
-    }
-
-    public String getEntryCode() {
-        return entryCode;
-    }
-
-    public static int getBibCounter() {
-        return bibCounter;
-    }
-
-    public static boolean isValidDiscountCode(String code) {
-        if (code == null || code.length() != 5) {
-            return false;
-        }
-
-        if (code.charAt(0) != 'M') {
-            return false;
-        }
-
-        if (!Character.isDigit(code.charAt(1))
-                || !Character.isDigit(code.charAt(2))
-                || !Character.isDigit(code.charAt(3))) {
-            return false;
-        }
-
-        return Character.isUpperCase(code.charAt(4))
-                && Character.isLetter(code.charAt(4));
-    }
-
-    public static String settleNight(RaceEntry[] entries) {
-        int processed = 0;
-        int nullSkipped = 0;
-        int relay = 0;
-        int individual = 0;
-
-        for (int i = 0; i < entries.length; i++) {
-            if (entries[i] == null) {
-                nullSkipped++;
-            } else {
-                processed++;
-
-                if (entries[i] instanceof RelayTeamEntry) {
-                    relay++;
-                } else {
-                    individual++;
-                }
-            }
-        }
-
-        return processed + " processed | "
-                + nullSkipped + " null skipped | "
-                + relay + " relay | "
-                + individual + " individual";
+    public String getSerialNumber() {
+        return serialNumber;
     }
 }
 
-class RunnerEntry extends RaceEntry {
-    private String category;
+interface RemoteControllable {
+    String connect(String appId);
+}
 
-    public RunnerEntry(String bibNumber, double entryFee,
-                       String category) {
-        super(bibNumber, entryFee);
-        this.category = category;
+interface EnergyTrackable {
+    double getConsumptionWatts();
+}
+
+class WashingMachine extends HomeDevice
+        implements RemoteControllable, EnergyTrackable {
+    private double consumptionWatts;
+
+    public WashingMachine(double consumptionWatts) {
+        this.consumptionWatts = consumptionWatts;
+    }
+
+    public String activate() {
+        return "Washing machine " + getSerialNumber()
+                + " started a cycle";
+    }
+
+    public String connect(String appId) {
+        return getSerialNumber() + " connected to " + appId;
+    }
+
+    public double getConsumptionWatts() {
+        return consumptionWatts;
     }
 }
 
-class EliteRunnerEntry extends RunnerEntry {
-    private double sponsorBonus;
+class Refrigerator extends HomeDevice implements EnergyTrackable {
+    private double consumptionWatts;
 
-    public EliteRunnerEntry(String bibNumber, double entryFee,
-                            String category, double sponsorBonus) {
-        super(bibNumber, entryFee, category);
-        this.sponsorBonus = sponsorBonus;
+    public Refrigerator(double consumptionWatts) {
+        this.consumptionWatts = consumptionWatts;
+    }
+
+    public String activate() {
+        return "Refrigerator " + getSerialNumber() + " started";
+    }
+
+    public double getConsumptionWatts() {
+        return consumptionWatts;
     }
 }
 
-class RelayTeamEntry extends RaceEntry {
-    private int teamSize;
+class MobileApp implements RemoteControllable {
+    private String appName;
 
-    public RelayTeamEntry(String bibNumber, double entryFee,
-                          int teamSize) {
-        super(bibNumber, entryFee);
+    public MobileApp(String appName) {
+        this.appName = appName;
+    }
 
-        if (teamSize <= 0) {
-            throw new IllegalArgumentException("Invalid team size");
-        }
-
-        this.teamSize = teamSize;
+    public String connect(String appId) {
+        return appName + " connected to " + appId;
     }
 }
 
 public class Problem5 {
+    static void connectAll(RemoteControllable[] items, String appId) {
+        for (RemoteControllable item : items) {
+            System.out.println(item.connect(appId));
+        }
+    }
+
+    static double getConsumptionIfTrackable(HomeDevice d) {
+        if (d instanceof EnergyTrackable) {
+            EnergyTrackable e = (EnergyTrackable) d;
+            return e.getConsumptionWatts();
+        }
+        return 0.0;
+    }
+
     public static void main(String[] args) {
-        System.out.println(
-                RaceEntry.isValidDiscountCode("M123A"));
-        System.out.println(
-                RaceEntry.isValidDiscountCode("M12A"));
-        System.out.println(
-                RaceEntry.isValidDiscountCode("X123A"));
+        WashingMachine wm = new WashingMachine(500.0);
+        Refrigerator fridge = new Refrigerator(150.0);
+        MobileApp app = new MobileApp("HomeConnect App");
 
-        EliteRunnerEntry elite =
-                new EliteRunnerEntry("BIB3001", 150,
-                        "Elite Full Marathon", 500);
+        System.out.println(wm.activate());
+        System.out.println(wm.connect("HomeConnect"));
+        System.out.println(getConsumptionIfTrackable(fridge));
+        System.out.println(app.connect("HomeConnect"));
 
-        RelayTeamEntry relay =
-                new RelayTeamEntry("BIB4001", 300, 4);
+        connectAll(
+            new RemoteControllable[]{wm, app},
+            "HomeConnect"
+        );
 
-        elite.pay(10, "UPI");
-
-        RaceEntry[] entries = {elite, null, relay};
-
-        System.out.println(RaceEntry.settleNight(entries));
-        System.out.println(elite.getEntryCode());
-        System.out.println(relay.getEntryCode());
-        System.out.println(RaceEntry.getBibCounter());
+        HomeDevice ref = wm;
+        System.out.println(getConsumptionIfTrackable(ref));
     }
 }
