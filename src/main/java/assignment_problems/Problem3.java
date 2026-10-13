@@ -1,33 +1,73 @@
 
-import java.util.*;
-
 public class Problem3 {
-    static long countPeriods(int[] transactions, int k) {
-        Map<Long, Integer> frequency = new HashMap<>();
-        frequency.put(0L, 1);
+    static class Node {
+        int data;
+        Node next;
 
-        long sum = 0;
-        long count = 0;
+        Node(int data) {
+            this.data = data;
+            this.next = null;
+        }
+    }
 
-        for (int value : transactions) {
-            sum += value;
+    static Node mergeSorted(Node a, Node b) {
+        Node dummy = new Node(0);
+        Node tail = dummy;
 
-            long needed = sum - k;
+        while (a != null && b != null) {
+            if (a.data <= b.data) {
+                tail.next = a;
+                a = a.next;
+            } else {
+                tail.next = b;
+                b = b.next;
+            }
 
-            count += frequency.getOrDefault(needed, 0);
-
-            frequency.put(sum, frequency.getOrDefault(sum, 0) + 1);
+            tail = tail.next;
         }
 
-        return count;
+        if (a != null) {
+            tail.next = a;
+        } else {
+            tail.next = b;
+        }
+
+        return dummy.next;
+    }
+
+    static void display(Node head) {
+        Node current = head;
+
+        while (current != null) {
+            System.out.print(current.data);
+
+            if (current.next != null) {
+                System.out.print(" -> ");
+            }
+
+            current = current.next;
+        }
+
+        System.out.println();
     }
 
     public static void main(String[] args) {
-        int[] transactions = {3, 4, -7, 1, 3, 3, 1, -4};
+        Node a = new Node(3);
+        a.next = new Node(8);
+        a.next.next = new Node(15);
 
-        System.out.println(countPeriods(transactions, 7));
+        Node b = new Node(5);
+        b.next = new Node(8);
+        b.next.next = new Node(12);
+        b.next.next.next = new Node(20);
 
-        int[] transactions2 = {1, 2, 3};
-        System.out.println(countPeriods(transactions2, 10));
+        Node result = mergeSorted(a, b);
+        display(result);
+
+        Node empty = null;
+        Node single = new Node(4);
+
+        Node result2 = mergeSorted(empty, single);
+        display(result2);
     }
 }

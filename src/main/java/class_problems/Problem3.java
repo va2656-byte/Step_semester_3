@@ -1,35 +1,42 @@
 
 public class Problem3 {
-    static String findBook(String[][] catalog, String targetIsbn) {
-        int left = 0;
-        int right = catalog.length - 1;
-
-        while (left <= right) {
-            int mid = (left + right) / 2;
-            int result = catalog[mid][0].compareTo(targetIsbn);
-
-            if (result == 0) {
-                return catalog[mid][1];
-            } else if (result < 0) {
-                left = mid + 1;
-            } else {
-                right = mid - 1;
-            }
-        }
-
-        return "Not Found";
-    }
-
     public static void main(String[] args) {
-        String[][] catalog = {
-            {"0001112223", "Introduction to Algebra"},
-            {"0002223334", "Beginning Python"},
-            {"0003334445", "Classic Mythology"},
-            {"0004445556", "Data and Society"},
-            {"0005556667", "European History"}
+        String[] names = {"Anu", "Ravi", "Meena"};
+        String[] subjects = {"Math", "Sci", "Eng"};
+
+        int[][] marks = {
+            {80, 90, 70},
+            {60, 85, -1},
+            {95, 75, 88}
         };
 
-        System.out.println(findBook(catalog, "0003334445"));
-        System.out.println(findBook(catalog, "0009998887"));
+        for (int i = 0; i < names.length; i++) {
+            int total = 0;
+
+            for (int j = 0; j < subjects.length; j++) {
+                if (marks[i][j] != -1) {
+                    total += marks[i][j];
+                }
+            }
+
+            System.out.println("Total " + names[i] + " " + total);
+        }
+
+        for (int j = 0; j < subjects.length; j++) {
+            int max = -1;
+            int topper = -1;
+
+            for (int i = 0; i < names.length; i++) {
+                if (marks[i][j] > max) {
+                    max = marks[i][j];
+                    topper = i;
+                }
+            }
+
+            if (topper != -1) {
+                System.out.println("Topper " + subjects[j] + " "
+                    + names[topper] + " " + max);
+            }
+        }
     }
 }

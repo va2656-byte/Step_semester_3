@@ -1,31 +1,47 @@
 
 public class Problem4 {
-    static String findBook(String[][] catalog, String targetIsbn) {
+    static int lowerBound(int[] prices, int target) {
         int left = 0;
-        int right = catalog.length - 1;
+        int right = prices.length;
 
-        while (left <= right) {
-            int mid = (left + right) / 2;
+        while (left < right) {
+            int mid = left + (right - left) / 2;
 
-            if (catalog[mid][0].equals(targetIsbn)) {
-                return catalog[mid][1];
-            } else if (catalog[mid][0].compareTo(targetIsbn) < 0) {
+            if (prices[mid] < target) {
                 left = mid + 1;
             } else {
-                right = mid - 1;
+                right = mid;
             }
         }
 
-        return "Not Found";
+        return left;
+    }
+
+    static int upperBound(int[] prices, int target) {
+        int left = 0;
+        int right = prices.length;
+
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+
+            if (prices[mid] <= target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+
+        return left;
     }
 
     public static void main(String[] args) {
-        String[][] catalog = {
-            {"0001112223", "Intro to Algebra"},
-            {"0002223334", "Beginning Python"}
-        };
+        int[] prices = {100, 150, 150, 200, 300, 450};
 
-        System.out.println(findBook(catalog, "0002223334"));
-        System.out.println(findBook(catalog, "0009998887"));
+        int low = lowerBound(prices, 150);
+        int high = upperBound(prices, 300);
+
+        System.out.println("Lower bound index " + low);
+        System.out.println("Upper bound index " + high);
+        System.out.println("Count " + (high - low));
     }
 }

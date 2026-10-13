@@ -1,51 +1,114 @@
 
-import java.util.*;
-
 public class Problem5 {
-    static List<Integer> auditRoute(int[][] grid) {
-        List<Integer> result = new ArrayList<>();
+    static class Node {
+        int coefficient;
+        int exponent;
+        Node next;
 
-        int top = 0;
-        int bottom = grid.length - 1;
-        int left = 0;
-        int right = grid[0].length - 1;
+        Node(int coefficient, int exponent) {
+            this.coefficient = coefficient;
+            this.exponent = exponent;
+            this.next = null;
+        }
+    }
 
-        while (top <= bottom && left <= right) {
-            for (int j = left; j <= right; j++) {
-                result.add(grid[top][j]);
-            }
-            top++;
+    static Node addPolynomials(Node p, Node q) {
+        Node dummy = new Node(0, 0);
+        Node tail = dummy;
 
-            for (int i = top; i <= bottom; i++) {
-                result.add(grid[i][right]);
-            }
-            right--;
+        while (p != null && q != null) {
+            if (p.exponent > q.exponent) {
+                tail.next = new Node(p.coefficient, p.exponent);
+                p = p.next;
+                tail = tail.next;
+            } else if (p.exponent < q.exponent) {
+                tail.next = new Node(q.coefficient, q.exponent);
+                q = q.next;
+                tail = tail.next;
+            } else {
+                int sum = p.coefficient + q.coefficient;
 
-            if (top <= bottom) {
-                for (int j = right; j >= left; j--) {
-                    result.add(grid[bottom][j]);
+                if (sum != 0) {
+                    tail.next = new Node(sum, p.exponent);
+                    tail = tail.next;
                 }
-                bottom--;
-            }
 
-            if (left <= right) {
-                for (int i = bottom; i >= top; i--) {
-                    result.add(grid[i][left]);
-                }
-                left++;
+                p = p.next;
+                q = q.next;
             }
         }
 
-        return result;
+        while (p != null) {
+            tail.next = new Node(p.coefficient, p.exponent);
+            tail = tail.next;
+            p = p.next;
+        }
+
+        while (q != null) {
+            tail.next = new Node(q.coefficient, q.exponent);
+            tail = tail.next;
+            q = q.next;
+        }
+
+        return dummy.next;
+    }
+
+    static void printPolynomial(Node head) {
+        if (head == null) {
+            System.out.println("0");
+            return;
+        }
+
+        boolean first = true;
+
+        while (head != null) {
+            int c = head.coefficient;
+            int e = head.exponent;
+            int abs = Math.abs(c);
+
+            if (!first) {
+                System.out.print(c > 0 ? " + " : " - ");
+            } else if (c < 0) {
+                System.out.print("-");
+            }
+
+            if (e == 0 || abs != 1) {
+                System.out.print(abs);
+            }
+
+            if (e > 0) {
+                System.out.print("x");
+                if (e > 1) {
+                    System.out.print("^" + e);
+                }
+            }
+
+            first = false;
+            head = head.next;
+        }
+
+        System.out.println();
     }
 
     public static void main(String[] args) {
-        int[][] grid = {
-            {1, 2, 3, 4},
-            {5, 6, 7, 8},
-            {9, 10, 11, 12}
-        };
+        Node p = new Node(5, 3);
+        p.next = new Node(4, 2);
+        p.next.next = new Node(2, 0);
 
-        System.out.println(auditRoute(grid));
+        Node q = new Node(5, 2);
+        q.next = new Node(-3, 1);
+        q.next.next = new Node(1, 0);
+
+        Node result = addPolynomials(p, q);
+        printPolynomial(result);
+
+        Node a = new Node(3, 2);
+        a.next = new Node(1, 0);
+
+        Node b = new Node(-3, 2);
+        b.next = new Node(4, 1);
+
+        Node result2 = addPolynomials(a, b);
+        printPolynomial(result2);
     }
 }

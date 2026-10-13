@@ -1,47 +1,33 @@
 
+import java.util.Scanner;
+
 public class Problem4 {
-    static int lowerBound(int[] scores, int target) {
-        int left = 0;
-        int right = scores.length;
-
-        while (left < right) {
-            int mid = left + (right - left) / 2;
-
-            if (scores[mid] < target) {
-                left = mid + 1;
-            } else {
-                right = mid;
-            }
-        }
-
-        return left;
-    }
-
-    static int upperBound(int[] scores, int target) {
-        int left = 0;
-        int right = scores.length;
-
-        while (left < right) {
-            int mid = left + (right - left) / 2;
-
-            if (scores[mid] <= target) {
-                left = mid + 1;
-            } else {
-                right = mid;
-            }
-        }
-
-        return left;
-    }
-
-    static int countInBand(int[] scores, int low, int high) {
-        return upperBound(scores, high) - lowerBound(scores, low);
-    }
-
     public static void main(String[] args) {
-        int[] scores = {35, 42, 42, 50, 58, 58, 58, 63, 71, 88};
+        Scanner sc = new Scanner(System.in);
 
-        System.out.println(countInBand(scores, 42, 58));
-        System.out.println(countInBand(scores, 90, 100));
+        System.out.print("Enter train code: ");
+        String code = sc.nextLine();
+
+        int left = 0;
+        int right = code.length() - 1;
+        boolean palindrome = true;
+
+        while (left < right) {
+            if (code.charAt(left) != code.charAt(right)) {
+                palindrome = false;
+                break;
+            }
+
+            left++;
+            right--;
+        }
+
+        if (palindrome) {
+            System.out.println("Palindrome");
+        } else {
+            System.out.println("Not Palindrome");
+        }
+
+        sc.close();
     }
 }

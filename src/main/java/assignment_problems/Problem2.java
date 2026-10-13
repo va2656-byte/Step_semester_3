@@ -1,38 +1,69 @@
 
 public class Problem2 {
-    static int[] longestStreak(int[] costs, int budget) {
-        int left = 0;
-        int sum = 0;
-        int maxLength = 0;
-        int startIndex = -1;
+    static class Node {
+        String url;
+        Node prev;
+        Node next;
 
-        for (int right = 0; right < costs.length; right++) {
-            sum += costs[right];
+        Node(String url) {
+            this.url = url;
+            this.prev = null;
+            this.next = null;
+        }
+    }
 
-            while (sum > budget) {
-                sum -= costs[left];
-                left++;
-            }
+    static class BrowserHistory {
+        Node current;
 
-            int length = right - left + 1;
-
-            if (length > maxLength) {
-                maxLength = length;
-                startIndex = left;
-            }
+        BrowserHistory(String homepage) {
+            current = new Node(homepage);
         }
 
-        return new int[]{maxLength, startIndex};
+        void visit(String url) {
+            Node newNode = new Node(url);
+
+            current.next = null;
+
+            newNode.prev = current;
+            current.next = newNode;
+
+            current = newNode;
+        }
+
+        String back(int steps) {
+            while (steps > 0 && current.prev != null) {
+                current = current.prev;
+                steps--;
+            }
+
+            return current.url;
+        }
+
+        String forward(int steps) {
+            while (steps > 0 && current.next != null) {
+                current = current.next;
+                steps--;
+            }
+
+            return current.url;
+        }
     }
 
     public static void main(String[] args) {
-        int[] costs = {4, 2, 1, 7, 3, 1, 2, 1, 5};
+        BrowserHistory browser = new BrowserHistory("srm.edu");
 
-        int[] result = longestStreak(costs, 8);
-        System.out.println("(" + result[0] + ", " + result[1] + ")");
+        browser.visit("a.com");
+        browser.visit("b.com");
+        browser.visit("c.com");
 
-        int[] costs2 = {9, 10};
-        int[] result2 = longestStreak(costs2, 8);
-        System.out.println("(" + result2[0] + ", " + result2[1] + ")");
+        System.out.println(browser.back(1));
+        System.out.println(browser.back(1));
+        System.out.println(browser.forward(1));
+
+        browser.visit("d.com");
+
+        System.out.println(browser.forward(2));
+        System.out.println(browser.back(2));
+        System.out.println(browser.back(7));
     }
 }

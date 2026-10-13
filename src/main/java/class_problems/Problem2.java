@@ -1,34 +1,44 @@
 
-public class Problem2 {
-    static void warehouseSummary(int[][] grid) {
-        int total = 0;
-        int max = -1;
-        int maxRow = 0;
-        int maxCol = 0;
+import java.util.HashSet;
+import java.util.Objects;
 
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[i].length; j++) {
-                total += grid[i][j];
+class Customer {
+    int id;
+    String name;
 
-                if (grid[i][j] > max) {
-                    max = grid[i][j];
-                    maxRow = i;
-                    maxCol = j;
-                }
-            }
-        }
-
-        System.out.println("Total = " + total);
-        System.out.println("MaxCoordinate = (" + maxRow + ", " + maxCol + ")");
+    Customer(int id, String name) {
+        this.id = id;
+        this.name = name;
     }
 
-    public static void main(String[] args) {
-        int[][] grid = {
-            {4, 9, 2},
-            {7, 1, 6},
-            {3, 12, 5}
-        };
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
 
-        warehouseSummary(grid);
+        if (!(obj instanceof Customer)) {
+            return false;
+        }
+
+        Customer c = (Customer) obj;
+        return id == c.id && name.equals(c.name);
+    }
+
+    public int hashCode() {
+        return Objects.hash(id, name);
+    }
+}
+
+public class Problem2 {
+    public static void main(String[] args) {
+        HashSet<Customer> customers = new HashSet<>();
+
+        System.out.println(customers.add(new Customer(101, "Asha")));
+        System.out.println(customers.add(new Customer(101, "Asha")));
+        System.out.println(customers.add(new Customer(102, "Ravi")));
+
+        System.out.println("Unique count: " + customers.size());
+        System.out.println("Contains: " +
+            customers.contains(new Customer(101, "Asha")));
     }
 }
