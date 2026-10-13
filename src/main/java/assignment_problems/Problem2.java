@@ -1,120 +1,163 @@
-class RaceEntry {
-    protected String bibNumber;
-    protected double entryFee;
-    protected double amountPaid;
 
-    public RaceEntry(String bibNumber, double entryFee) {
-        if (bibNumber == null || bibNumber.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid bib number");
+import java.util.*;
+
+interface ShippingType {
+    double calculateCharge(double weight);
+}
+
+class StandardShipping implements ShippingType {
+    public double calculateCharge(double weight) {
+        return 40 + 10 * weight;
+    }
+}
+
+class ExpressShipping implements ShippingType {
+    public double calculateCharge(double weight) {
+        return 80 + 15 * weight;
+    }
+}
+
+class FragileShipping implements ShippingType {
+    private ShippingType standard = new StandardShipping();
+
+    public double calculateCharge(double weight) {
+        return standard.calculateCharge(weight) + 50;
+    }
+}
+
+interface NotificationChannel {
+    void notify(String parcelId, String status);
+}
+
+class SmsChannel implements NotificationChannel {
+    public void notify(String id, String status) {
+        System.out.println("[SMS] " + id + " is now " + status + ".");
+    }
+}
+
+class EmailChannel implements NotificationChannel {
+    public void notify(String id, String status) {
+        System.out.println("[Email] " + id + " is now " + status + ".");
+    }
+}
+
+class Customer {
+    String name;
+
+    Customer(String name) {
+        this.name = name;
+    }
+}
+
+class Parcel {
+    String id;
+    Customer customer;
+    double weight;
+    ShippingType shipping;
+    String status = "BOOKED";
+    ArrayList<NotificationChannel> channels = new ArrayList<>();
+
+    Parcel(String id, Customer customer, double weight,
+           ShippingType shipping) {
+        this.id = id;
+        this.customer = customer;
+        this.weight = weight;
+        this.shipping = shipping;
+    }
+
+    void subscribe(NotificationChannel channel) {
+        channels.add(channel);
+    }
+
+    void notifyChannels() {
+        for (NotificationChannel channel : channels) {
+            channel.notify(id, status);
+        }
+    }
+
+    boolean updateStatus(String newStatus) {
+        String expected = "";
+
+        switch (status) {
+            case "BOOKED":
+                expected = "PICKED_UP";
+                break;
+            case "PICKED_UP":
+                expected = "IN_TRANSIT";
+                break;
+            case "IN_TRANSIT":
+                expected = "OUT_FOR_DELIVERY";
+                break;
+            case "OUT_FOR_DELIVERY":
+                expected = "DELIVERED";
+                break;
+            default:
+                break;
         }
 
-        this.bibNumber = bibNumber;
-        this.entryFee = entryFee;
-        amountPaid = 0;
+        if (!newStatus.equals(expected)) {
+            System.out.println("Invalid transition: " + status + " → "
+                    + newStatus + " is not allowed.");
+            return false;
+        }
+
+        status = newStatus;
+        notifyChannels();
+        return true;
     }
 
-    public double getBalanceDue() {
-        return entryFee - amountPaid;
-    }
+    void cancel() {
+        if (!status.equals("BOOKED")) {
+            System.out.println("Cancellation failed: " + id
+                    + " can be cancelled only while BOOKED.");
+            return;
+        }
 
-    public void announce() {
-        System.out.println("Race Entry | Bib: " + bibNumber
-                + " | Balance: " + getBalanceDue());
-    }
-}
-
-class RunnerEntry extends RaceEntry {
-    protected String category;
-
-    public RunnerEntry(String bibNumber, double entryFee,
-                       String category) {
-        super(bibNumber, entryFee);
-        this.category = category;
-    }
-
-    @Override
-    public void announce() {
-        System.out.println("Runner Entry | Bib: " + bibNumber
-                + " | Category: " + category
-                + " | Balance: " + getBalanceDue());
+        status = "CANCELLED";
+        notifyChannels();
+        System.out.println("Parcel " + id + " cancelled.");
     }
 }
 
-class EliteRunnerEntry extends RunnerEntry {
-    private double sponsorBonus;
+class ParcelService {
+    Parcel book(String id, Customer customer, double weight,
+                ShippingType shipping) {
+        if (weight <= 0) {
+            System.out.println("Booking failed: Weight must be positive.");
+            return null;
+        }
 
-    public EliteRunnerEntry(String bibNumber, double entryFee,
-                            String category, double sponsorBonus) {
-        super(bibNumber, entryFee, category);
-        this.sponsorBonus = sponsorBonus;
-    }
+        Parcel p = new Parcel(id, customer, weight, shipping);
 
-    @Override
-    public void announce() {
-        System.out.println("Elite Runner | Bib: " + bibNumber
-                + " | Category: " + category
-                + " | Sponsor Bonus: " + sponsorBonus
-                + " | Balance: " + getBalanceDue());
-    }
-}
+        System.out.println("Parcel " + id + " booked ("
+                + shipping.getClass().getSimpleName().replace("Shipping", "")
+                + ", " + weight + " kg).");
 
-class RelayTeamEntry extends RaceEntry {
-    private int teamSize;
+        System.out.printf("Charge: ₹%.2f%n",
+                shipping.calculateCharge(weight));
 
-    public RelayTeamEntry(String bibNumber, double entryFee,
-                          int teamSize) {
-        super(bibNumber, entryFee);
-        this.teamSize = teamSize;
-    }
-
-    @Override
-    public void announce() {
-        System.out.println("Relay Team | Bib: " + bibNumber
-                + " | Team Size: " + teamSize
-                + " | Balance: " + getBalanceDue());
+        p.notifyChannels();
+        return p;
     }
 }
 
 public class Problem2 {
-    static String classifyGeneration(RaceEntry entry) {
-        if (entry instanceof EliteRunnerEntry) {
-            return "Multilevel descendant (3 generations deep)";
-        } else if (entry instanceof RelayTeamEntry) {
-            return "Hierarchical sibling (independent branch)";
-        } else {
-            return "Base or direct descendant";
-        }
-    }
-
-    static double getTotalBalanceDue(RaceEntry[] entries) {
-        double total = 0;
-
-        for (int i = 0; i < entries.length; i++) {
-            total += entries[i].getBalanceDue();
-        }
-
-        return total;
-    }
-
     public static void main(String[] args) {
-        RunnerEntry runner =
-                new RunnerEntry("BIB2001", 80, "Open 10K");
+        Customer c = new Customer("Asha");
+        ParcelService service = new ParcelService();
 
-        EliteRunnerEntry elite =
-                new EliteRunnerEntry("BIB3001", 150,
-                        "Elite Full Marathon", 500);
+        Parcel p = service.book(
+                "P101", c, 2, new ExpressShipping());
 
-        RelayTeamEntry relay =
-                new RelayTeamEntry("BIB4001", 300, 4);
+        p.subscribe(new SmsChannel());
+        p.subscribe(new EmailChannel());
 
-        runner.announce();
-        elite.announce();
-        relay.announce();
+        // Send the initial BOOKED update to newly subscribed channels.
+        p.notifyChannels();
 
-        System.out.println(classifyGeneration(elite));
-        System.out.println(classifyGeneration(relay));
-
-        RaceEntry[] entries = {runner, elite, relay};
-        System.out.println(getTotalBalanceDue(entries));
+        p.updateStatus("PICKED_UP");
+        p.cancel();
+        p.updateStatus("IN_TRANSIT");
+        p.updateStatus("DELIVERED");
     }
 }

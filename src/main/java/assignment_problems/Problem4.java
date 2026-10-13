@@ -1,112 +1,207 @@
-class RaceEntry {
-    protected String bibNumber;
-    protected double entryFee;
-    protected double amountPaid;
 
-    public RaceEntry(String bibNumber, double entryFee) {
-        if (bibNumber == null || bibNumber.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid bib number");
-        }
+import java.util.*;
 
-        this.bibNumber = bibNumber;
-        this.entryFee = entryFee;
+interface CreditPolicy {
+    int getCreditLimit();
+    String getType();
+}
+
+class RegularPolicy implements CreditPolicy {
+    public int getCreditLimit() {
+        return 24;
     }
 
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
-    }
-
-    public double getBalanceDue() {
-        return entryFee - amountPaid;
-    }
-
-    public String announce() {
-        return "Race Entry | Bib: " + bibNumber
-                + " | Balance: " + getBalanceDue();
+    public String getType() {
+        return "Regular";
     }
 }
 
-class RunnerEntry extends RaceEntry {
-    private String category;
-
-    public RunnerEntry(String bibNumber, double entryFee,
-                       String category) {
-        super(bibNumber, entryFee);
-        this.category = category;
+class HonorsPolicy implements CreditPolicy {
+    public int getCreditLimit() {
+        return 28;
     }
 
-    @Override
-    public String announce() {
-        return "Runner Entry | Bib: " + bibNumber
-                + " | Category: " + category
-                + " | Balance: " + getBalanceDue();
+    public String getType() {
+        return "Honors";
     }
 }
 
-class RelayTeamEntry extends RaceEntry {
-    private int teamSize;
-
-    public RelayTeamEntry(String bibNumber, double entryFee,
-                          int teamSize) {
-        super(bibNumber, entryFee);
-        this.teamSize = teamSize;
+class ExchangePolicy implements CreditPolicy {
+    public int getCreditLimit() {
+        return 20;
     }
 
-    public int getTeamSize() {
-        return teamSize;
+    public String getType() {
+        return "Exchange";
+    }
+}
+
+class Student {
+    String name;
+    CreditPolicy policy;
+    int currentCredits;
+
+    Student(String name, CreditPolicy policy, int currentCredits) {
+        this.name = name;
+        this.policy = policy;
+        this.currentCredits = currentCredits;
     }
 
-    @Override
-    public String announce() {
-        return "Relay Team | Bib: " + bibNumber
-                + " | Team Size: " + teamSize
-                + " | Balance: " + getBalanceDue();
+    boolean canAddCredits(int credits) {
+        return currentCredits + credits <= policy.getCreditLimit();
+    }
+
+    void addCredits(int credits) {
+        currentCredits += credits;
+    }
+
+    void removeCredits(int credits) {
+        currentCredits -= credits;
+    }
+}
+
+class Elective {
+    String name;
+    int credits;
+    int capacity;
+
+    private ArrayList<Student> enrolled = new ArrayList<>();
+    private Queue<Student> waitlist = new LinkedList<>();
+
+    Elective(String name, int credits, int capacity) {
+        this.name = name;
+        this.credits = credits;
+        this.capacity = capacity;
+    }
+
+    boolean contains(Student s) {
+        for (Student student : enrolled) {
+            if (student == s) {
+                return true;
+            }
+        }
+
+        for (Student student : waitlist) {
+            if (student == s) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    boolean isFull() {
+        return enrolled.size() >= capacity;
+    }
+
+    boolean enroll(Student s) {
+        if (contains(s)) {
+            System.out.println(s.name
+                    + " is already enrolled or waitlisted.");
+            return false;
+        }
+
+        if (!s.canAddCredits(credits)) {
+            System.out.println("Enrollment failed: " + s.name
+                    + " would exceed the " + s.policy.getType()
+                    + " credit limit (" + (s.currentCredits + credits)
+                    + "/" + s.policy.getCreditLimit() + ").");
+            return false;
+        }
+
+        if (isFull()) {
+            waitlist.add(s);
+            System.out.println(name + " is full.");
+            System.out.println(s.name + " added to waitlist (position "
+                    + waitlist.size() + ").");
+            return false;
+        }
+
+        enrolled.add(s);
+        s.addCredits(credits);
+
+        System.out.println(s.name + " enrolled in " + name
+                + " (credits: " + s.currentCredits + "/"
+                + s.policy.getCreditLimit() + ").");
+
+        return true;
+    }
+
+    void drop(Student s) {
+        if (!enrolled.remove(s)) {
+            System.out.println(s.name + " is not enrolled in " + name + ".");
+            return;
+        }
+
+        s.removeCredits(credits);
+
+        System.out.println(s.name + " dropped " + name
+                + " (credits: " + s.currentCredits + "/"
+                + s.policy.getCreditLimit() + ").");
+
+        promoteNext();
+    }
+
+    private void promoteNext() {
+        int count = waitlist.size();
+
+        for (int i = 0; i < count; i++) {
+            Student s = waitlist.poll();
+
+            if (s == null) {
+                break;
+            }
+
+            if (!s.canAddCredits(credits)) {
+                System.out.println("Promotion skipped: " + s.name
+                        + " would exceed the " + s.policy.getType()
+                        + " credit limit.");
+                waitlist.add(s);
+                continue;
+            }
+
+            if (isFull()) {
+                waitlist.add(s);
+                continue;
+            }
+
+            enrolled.add(s);
+            s.addCredits(credits);
+
+            System.out.println(s.name + " promoted from waitlist and enrolled in "
+                    + name + " (credits: " + s.currentCredits + "/"
+                    + s.policy.getCreditLimit() + ").");
+
+            break;
+        }
+    }
+}
+
+class EnrollmentService {
+    void enroll(Student student, Elective elective) {
+        elective.enroll(student);
+    }
+
+    void drop(Student student, Elective elective) {
+        elective.drop(student);
     }
 }
 
 public class Problem4 {
-    static String announceAll(RaceEntry[] entries) {
-        StringBuilder report = new StringBuilder();
-
-        for (int i = 0; i < entries.length; i++) {
-            report.append(entries[i].announce()).append(" | ");
-
-            if (entries[i] instanceof RelayTeamEntry) {
-                RelayTeamEntry relay =
-                        (RelayTeamEntry) entries[i];
-
-                report.append("[Team size via downcast: ")
-                      .append(relay.getTeamSize())
-                      .append("] | ");
-            }
-        }
-
-        return report.toString();
-    }
-
     public static void main(String[] args) {
-        RunnerEntry runner =
-                new RunnerEntry("BIB2001", 80, "Open 10K");
+        Elective elective = new Elective("Cloud Computing", 4, 2);
+        EnrollmentService service = new EnrollmentService();
 
-        runner.pay(30);
-        runner.pay(20);
+        Student asha = new Student("Asha", new RegularPolicy(), 20);
+        Student ravi = new Student("Ravi", new HonorsPolicy(), 22);
+        Student neha = new Student("Neha", new ExchangePolicy(), 12);
+        Student kiran = new Student("Kiran", new RegularPolicy(), 22);
 
-        RelayTeamEntry relay =
-                new RelayTeamEntry("BIB4001", 300, 4);
+        service.enroll(asha, elective);
+        service.enroll(ravi, elective);
+        service.enroll(neha, elective);
+        service.enroll(kiran, elective);
 
-        RaceEntry[] fleet = {runner, relay};
-
-        System.out.println(announceAll(fleet));
-
-        RaceEntry plain = new RaceEntry("BIB5001", 50);
-
-        if (plain instanceof RelayTeamEntry) {
-            RelayTeamEntry bad = (RelayTeamEntry) plain;
-            System.out.println(bad.getTeamSize());
-        } else {
-            System.out.println("Entry is not a relay team");
-        }
+        service.drop(asha, elective);
     }
 }

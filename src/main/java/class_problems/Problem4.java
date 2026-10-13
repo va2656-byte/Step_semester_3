@@ -1,84 +1,107 @@
-class EventTicket {
-    protected String attendeeId;
-    protected double basePrice;
-    protected double amountPaid;
 
-    public EventTicket(String attendeeId, double basePrice) {
-        if (attendeeId == null || attendeeId.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid attendee ID");
-        }
+abstract class Employee {
+    String name;
 
-        this.attendeeId = attendeeId;
-        this.basePrice = basePrice;
-        amountPaid = 0;
+    Employee(String name) {
+        this.name = name;
     }
 
-    public double getBalanceDue() {
-        return basePrice - amountPaid;
+    abstract int getAnnualLeaveLimit();
+}
+
+class FullTimeEmployee extends Employee {
+    FullTimeEmployee(String name) {
+        super(name);
     }
 
-    public String printTicket() {
-        return "Standard | Balance: " + getBalanceDue();
+    int getAnnualLeaveLimit() {
+        return 30;
     }
 }
 
-class WorkshopTicket extends EventTicket {
-    private String track;
-
-    public WorkshopTicket(String attendeeId, double basePrice,
-                          String track) {
-        super(attendeeId, basePrice);
-        this.track = track;
+class PartTimeEmployee extends Employee {
+    PartTimeEmployee(String name) {
+        super(name);
     }
 
-    public String getTrack() {
-        return track;
+    int getAnnualLeaveLimit() {
+        return 15;
+    }
+}
+
+class ContractEmployee extends Employee {
+    ContractEmployee(String name) {
+        super(name);
     }
 
-    @Override
-    public String printTicket() {
-        return "Workshop | Track: " + track
-                + " | Balance: " + getBalanceDue();
+    int getAnnualLeaveLimit() {
+        return 10;
+    }
+}
+
+class LeaveRequest {
+    Employee employee;
+    String startDate;
+    String endDate;
+    private String status = "Pending";
+
+    LeaveRequest(Employee employee, String startDate, String endDate) {
+        this.employee = employee;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
+    String getStatus() {
+        return status;
+    }
+
+    void review(String decision) {
+        if (!status.equals("Pending")) {
+            System.out.println("Cannot change status: " + status
+                    + " request cannot revert to Pending.");
+            return;
+        }
+
+        if (decision.equals("Approved") || decision.equals("Rejected")) {
+            status = decision;
+
+            System.out.println("Leave request for " + employee.name
+                    + " " + status.toLowerCase() + ".");
+            System.out.println("Status: " + status);
+        } else {
+            System.out.println("Invalid review decision.");
+        }
+    }
+}
+
+class LeaveManager {
+    LeaveRequest submit(Employee e, String start, String end) {
+        LeaveRequest request = new LeaveRequest(e, start, end);
+
+        System.out.println("Leave request submitted by " + e.name
+                + " for " + start + " to " + end + ".");
+        System.out.println("Status: " + request.getStatus());
+
+        return request;
     }
 }
 
 public class Problem4 {
-    static String batchPrint(EventTicket[] tickets) {
-        StringBuilder report = new StringBuilder();
-
-        for (int i = 0; i < tickets.length; i++) {
-            report.append(tickets[i].printTicket()).append(" | ");
-
-            if (tickets[i] instanceof WorkshopTicket) {
-                WorkshopTicket w = (WorkshopTicket) tickets[i];
-
-                report.append("[Track via downcast: ")
-                      .append(w.getTrack())
-                      .append("] | ");
-            }
-        }
-
-        return report.toString();
-    }
-
     public static void main(String[] args) {
-        EventTicket standard =
-                new EventTicket("STU1", 500);
+        LeaveManager manager = new LeaveManager();
 
-        WorkshopTicket workshop =
-                new WorkshopTicket("STU2", 1200, "AI/ML");
+        Employee e1 = new FullTimeEmployee("John Doe");
 
-        EventTicket[] tickets = {standard, workshop};
+        LeaveRequest r1 = manager.submit(
+                e1, "2024-10-10", "2024-10-12");
 
-        System.out.println(batchPrint(tickets));
+        r1.review("Approved");
 
-        EventTicket plain = new EventTicket("STU3", 500);
+        Employee e2 = new PartTimeEmployee("Jane Smith");
 
-        if (plain instanceof WorkshopTicket) {
-            WorkshopTicket bad = (WorkshopTicket) plain;
-            System.out.println(bad.getTrack());
-        } else {
-            System.out.println("Ticket is not a workshop ticket");
-        }
+        manager.submit(
+                e2, "2024-11-01", "2024-11-05");
+
+        r1.review("Pending");
     }
 }

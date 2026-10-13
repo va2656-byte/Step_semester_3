@@ -1,82 +1,133 @@
-import java.util.Arrays;
 
-class EventTicket {
-    protected String attendeeId;
-    protected double basePrice;
-    protected double amountPaid;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 
-    private double[] lateFeeHistory = new double[10];
-    private int lateFeeCount = 0;
+abstract class Room {
+    String name;
+    double rate;
 
-    public EventTicket(String attendeeId, double basePrice) {
-        if (attendeeId == null || attendeeId.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid attendee ID");
-        }
-
-        this.attendeeId = attendeeId;
-        this.basePrice = basePrice;
-        amountPaid = 0;
+    Room(String name, double rate) {
+        this.name = name;
+        this.rate = rate;
     }
 
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
+    abstract double calculatePrice(long days);
+}
+
+class StandardRoom extends Room {
+    StandardRoom(String name) {
+        super(name, 150);
     }
 
-    protected void applyLateFee(double amount) {
-        if (lateFeeCount < lateFeeHistory.length) {
-            lateFeeHistory[lateFeeCount] = amount;
-            lateFeeCount++;
-        }
-    }
-
-    public double[] getLateFeeHistory() {
-        return Arrays.copyOf(lateFeeHistory, lateFeeCount);
-    }
-
-    public double getBalanceDue() {
-        double total = 0;
-
-        for (int i = 0; i < lateFeeCount; i++) {
-            total += lateFeeHistory[i];
-        }
-
-        return basePrice - amountPaid + total;
+    double calculatePrice(long days) {
+        return rate * days;
     }
 }
 
-class WorkshopTicket extends EventTicket {
-    private String track;
-
-    public WorkshopTicket(String attendeeId, double basePrice,
-                          String track) {
-        super(attendeeId, basePrice);
-        this.track = track;
+class DeluxeRoom extends Room {
+    DeluxeRoom(String name) {
+        super(name, 200);
     }
 
-    @Override
-    protected void applyLateFee(double amount) {
-        super.applyLateFee(amount * 2);
+    double calculatePrice(long days) {
+        return rate * days;
+    }
+}
+
+class Reservation {
+    Room room;
+    LocalDate start;
+    LocalDate end;
+    LocalDate cancelDeadline;
+    boolean active = true;
+
+    Reservation(Room room, LocalDate start, LocalDate end,
+                LocalDate cancelDeadline) {
+        this.room = room;
+        this.start = start;
+        this.end = end;
+        this.cancelDeadline = cancelDeadline;
+    }
+
+    boolean overlaps(LocalDate s, LocalDate e) {
+        return active && s.isBefore(end) && start.isBefore(e);
+    }
+
+    boolean cancel(LocalDate today) {
+        if (!active || today.isAfter(cancelDeadline)) {
+            return false;
+        }
+
+        active = false;
+        return true;
+    }
+}
+
+class BookingManager {
+    ArrayList<Reservation> reservations = new ArrayList<>();
+
+    Reservation book(Room room, LocalDate start, LocalDate end,
+                     LocalDate cancelDeadline) {
+        if (!start.isBefore(end)) {
+            System.out.println("Invalid booking dates.");
+            return null;
+        }
+
+        for (Reservation r : reservations) {
+            if (r.room == room && r.overlaps(start, end)) {
+                System.out.println("Booking failed: " + room.name
+                        + " is not available for " + start + " to " + end);
+                return null;
+            }
+        }
+
+        Reservation r = new Reservation(
+                room, start, end, cancelDeadline);
+        reservations.add(r);
+
+        long days = ChronoUnit.DAYS.between(start, end);
+
+        System.out.println(room.name + " booked from " + start
+                + " to " + end + ".");
+
+        System.out.printf("Total price: $%.2f%n",
+                room.calculatePrice(days));
+
+        return r;
+    }
+
+    void cancel(Reservation r, LocalDate today) {
+        if (r != null && r.cancel(today)) {
+            System.out.println("Reservation for " + r.room.name
+                    + " cancelled successfully.");
+        } else {
+            System.out.println("Cancellation failed.");
+        }
     }
 }
 
 public class Problem3 {
     public static void main(String[] args) {
-        WorkshopTicket w =
-                new WorkshopTicket("STU2", 1200, "AI/ML");
+        BookingManager manager = new BookingManager();
 
-        w.pay(1200);
-        w.applyLateFee(100);
+        Room deluxe = new DeluxeRoom("Deluxe Room 101");
+        Room standard = new StandardRoom("Standard Room 205");
 
-        System.out.println(w.getBalanceDue());
+        LocalDate s1 = LocalDate.parse("2024-12-01");
+        LocalDate e1 = LocalDate.parse("2024-12-05");
+        LocalDate s2 = LocalDate.parse("2024-12-03");
+        LocalDate e2 = LocalDate.parse("2024-12-07");
 
-        double[] history = w.getLateFeeHistory();
-        System.out.println(Arrays.toString(history));
+        Reservation r1 = manager.book(
+                deluxe, s1, e1, LocalDate.parse("2024-11-30"));
 
-        history[0] = 999;
+        manager.book(
+                standard, s2, e2, LocalDate.parse("2024-12-02"));
 
-        System.out.println(
-                Arrays.toString(w.getLateFeeHistory()));
+        manager.book(
+                deluxe, s2, e2, LocalDate.parse("2024-12-02"));
+
+        manager.cancel(r1, LocalDate.parse("2024-11-29"));
     }
 }

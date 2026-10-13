@@ -1,155 +1,224 @@
-class RaceEntry {
-    protected String bibNumber;
-    protected double entryFee;
-    protected double amountPaid;
 
-    private static int bibCounter = 0;
-    private final String entryCode;
+import java.util.*;
 
-    public RaceEntry(String bibNumber, double entryFee) {
-        if (bibNumber == null || bibNumber.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid bib number");
+interface PricingPlan {
+    double calculatePrice(double price);
+    String getName();
+}
+
+class DayScholarPlan implements PricingPlan {
+    public double calculatePrice(double price) {
+        return price;
+    }
+
+    public String getName() {
+        return "Day Scholar";
+    }
+}
+
+class HostellerPlan implements PricingPlan {
+    public double calculatePrice(double price) {
+        return price * 0.90;
+    }
+
+    public String getName() {
+        return "Hosteller";
+    }
+}
+
+class StaffPlan implements PricingPlan {
+    public double calculatePrice(double price) {
+        return price * 0.80;
+    }
+
+    public String getName() {
+        return "Staff";
+    }
+}
+
+class Transaction {
+    String description;
+    double amount;
+
+    Transaction(String description, double amount) {
+        this.description = description;
+        this.amount = amount;
+    }
+}
+
+class Purchase {
+    String itemName;
+    double amount;
+    boolean refunded = false;
+
+    Purchase(String itemName, double amount) {
+        this.itemName = itemName;
+        this.amount = amount;
+    }
+}
+
+class SmartCard {
+    private String cardId;
+    private PricingPlan plan;
+    private double balance = 0;
+    private boolean blocked = false;
+
+    private ArrayList<Transaction> transactions = new ArrayList<>();
+    private ArrayList<Purchase> purchases = new ArrayList<>();
+
+    SmartCard(String cardId, PricingPlan plan) {
+        this.cardId = cardId;
+        this.plan = plan;
+    }
+
+    public String getCardId() {
+        return cardId;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void block() {
+        blocked = true;
+        System.out.println(cardId + " blocked.");
+    }
+
+    public void unblock() {
+        blocked = false;
+        System.out.println(cardId + " unblocked.");
+    }
+
+    public void topUp(double amount) {
+        if (blocked) {
+            System.out.println("Top-up rejected: Card is blocked.");
+            return;
         }
 
-        if (entryFee <= 0) {
-            throw new IllegalArgumentException("Invalid entry fee");
+        if (amount < 100) {
+            System.out.println("Top-up rejected: Minimum top-up is ₹100.00.");
+            return;
         }
 
-        this.bibNumber = bibNumber;
-        this.entryFee = entryFee;
-        this.amountPaid = 0;
-
-        bibCounter++;
-        entryCode = "ENTRY" + bibCounter;
-    }
-
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
-    }
-
-    public void pay(double amount, String mode) {
-        pay(amount);
-        System.out.println("Paying via " + mode);
-    }
-
-    public double getBalanceDue() {
-        return entryFee - amountPaid;
-    }
-
-    public String getEntryCode() {
-        return entryCode;
-    }
-
-    public static int getBibCounter() {
-        return bibCounter;
-    }
-
-    public static boolean isValidDiscountCode(String code) {
-        if (code == null || code.length() != 5) {
-            return false;
+        if (balance + amount > 5000) {
+            System.out.println("Top-up rejected: Maximum balance is ₹5000.00.");
+            return;
         }
 
-        if (code.charAt(0) != 'M') {
-            return false;
-        }
+        balance += amount;
+        transactions.add(new Transaction("Top-up", amount));
 
-        if (!Character.isDigit(code.charAt(1))
-                || !Character.isDigit(code.charAt(2))
-                || !Character.isDigit(code.charAt(3))) {
-            return false;
-        }
-
-        return Character.isUpperCase(code.charAt(4))
-                && Character.isLetter(code.charAt(4));
+        System.out.printf("%s topped up with ₹%.2f.%n", cardId, amount);
+        System.out.printf("Balance: ₹%.2f%n", balance);
     }
 
-    public static String settleNight(RaceEntry[] entries) {
-        int processed = 0;
-        int nullSkipped = 0;
-        int relay = 0;
-        int individual = 0;
+    public Purchase purchase(String itemName, double originalPrice) {
+        if (blocked) {
+            System.out.println("Purchase failed: Card is blocked.");
+            return null;
+        }
 
-        for (int i = 0; i < entries.length; i++) {
-            if (entries[i] == null) {
-                nullSkipped++;
+        if (originalPrice <= 0) {
+            System.out.println("Purchase failed: Invalid item price.");
+            return null;
+        }
+
+        double charged = plan.calculatePrice(originalPrice);
+
+        if (balance < charged) {
+            System.out.printf(
+                    "Purchase failed: Insufficient balance (required ₹%.2f, available ₹%.2f).%n",
+                    charged, balance);
+            return null;
+        }
+
+        balance -= charged;
+        transactions.add(new Transaction(itemName, -charged));
+
+        Purchase p = new Purchase(itemName, charged);
+        purchases.add(p);
+
+        System.out.printf("%s purchased for ₹%.2f.%n", itemName, charged);
+        System.out.printf("Balance: ₹%.2f%n", balance);
+
+        return p;
+    }
+
+    public void refund(Purchase purchase) {
+        if (purchase == null || !purchases.contains(purchase)) {
+            System.out.println("Refund rejected: Purchase not found.");
+            return;
+        }
+
+        if (purchase.refunded) {
+            System.out.println("Refund rejected: " + purchase.itemName
+                    + " has already been refunded.");
+            return;
+        }
+
+        if (balance + purchase.amount > 5000) {
+            System.out.println("Refund rejected: Maximum balance would be exceeded.");
+            return;
+        }
+
+        purchase.refunded = true;
+        balance += purchase.amount;
+
+        transactions.add(new Transaction(
+                "Refund: " + purchase.itemName, purchase.amount));
+
+        System.out.printf("Refund of ₹%.2f for %s processed.%n",
+                purchase.amount, purchase.itemName);
+        System.out.printf("Balance: ₹%.2f%n", balance);
+    }
+
+    public void miniStatement() {
+        System.out.print("Mini-statement for " + cardId + ": ");
+
+        for (int i = 0; i < transactions.size(); i++) {
+            double amount = transactions.get(i).amount;
+
+            if (amount >= 0) {
+                System.out.printf("+%.2f", amount);
             } else {
-                processed++;
+                System.out.printf("-%.2f", Math.abs(amount));
+            }
 
-                if (entries[i] instanceof RelayTeamEntry) {
-                    relay++;
-                } else {
-                    individual++;
-                }
+            if (i < transactions.size() - 1) {
+                System.out.print(", ");
             }
         }
 
-        return processed + " processed | "
-                + nullSkipped + " null skipped | "
-                + relay + " relay | "
-                + individual + " individual";
+        System.out.printf(" = ₹%.2f%n", balance);
     }
-}
 
-class RunnerEntry extends RaceEntry {
-    private String category;
+    public boolean checkBalanceInvariant() {
+        double total = 0;
 
-    public RunnerEntry(String bibNumber, double entryFee,
-                       String category) {
-        super(bibNumber, entryFee);
-        this.category = category;
-    }
-}
-
-class EliteRunnerEntry extends RunnerEntry {
-    private double sponsorBonus;
-
-    public EliteRunnerEntry(String bibNumber, double entryFee,
-                            String category, double sponsorBonus) {
-        super(bibNumber, entryFee, category);
-        this.sponsorBonus = sponsorBonus;
-    }
-}
-
-class RelayTeamEntry extends RaceEntry {
-    private int teamSize;
-
-    public RelayTeamEntry(String bibNumber, double entryFee,
-                          int teamSize) {
-        super(bibNumber, entryFee);
-
-        if (teamSize <= 0) {
-            throw new IllegalArgumentException("Invalid team size");
+        for (Transaction t : transactions) {
+            total += t.amount;
         }
 
-        this.teamSize = teamSize;
+        return Math.abs(total - balance) < 0.001 && balance >= 0;
     }
 }
 
 public class Problem5 {
     public static void main(String[] args) {
-        System.out.println(
-                RaceEntry.isValidDiscountCode("M123A"));
-        System.out.println(
-                RaceEntry.isValidDiscountCode("M12A"));
-        System.out.println(
-                RaceEntry.isValidDiscountCode("X123A"));
+        SmartCard card = new SmartCard("C-2045", new HostellerPlan());
 
-        EliteRunnerEntry elite =
-                new EliteRunnerEntry("BIB3001", 150,
-                        "Elite Full Marathon", 500);
+        card.topUp(500);
 
-        RelayTeamEntry relay =
-                new RelayTeamEntry("BIB4001", 300, 4);
+        Purchase thali = card.purchase("Veg Thali", 120);
+        card.purchase("Cold Coffee", 60);
+        card.purchase("Large Order", 400);
 
-        elite.pay(10, "UPI");
+        card.refund(thali);
+        card.refund(thali);
 
-        RaceEntry[] entries = {elite, null, relay};
+        card.miniStatement();
 
-        System.out.println(RaceEntry.settleNight(entries));
-        System.out.println(elite.getEntryCode());
-        System.out.println(relay.getEntryCode());
-        System.out.println(RaceEntry.getBibCounter());
+        System.out.println("Balance invariant valid: "
+                + card.checkBalanceInvariant());
     }
 }

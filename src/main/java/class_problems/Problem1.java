@@ -1,73 +1,151 @@
-class EventTicket {
-    protected String attendeeId;
-    protected double basePrice;
-    protected double amountPaid;
 
-    public EventTicket(String attendeeId, double basePrice) {
-        if (attendeeId == null || attendeeId.trim().length() < 4) {
-            throw new IllegalArgumentException("Invalid attendee ID");
-        }
+import java.util.*;
 
-        this.attendeeId = attendeeId;
-        this.basePrice = basePrice;
-        amountPaid = 0;
+interface Question {
+    String getText();
+    boolean checkAnswer(String answer);
+}
+
+class MCQQuestion implements Question {
+    private String text;
+    private String correctAnswer;
+
+    MCQQuestion(String text, String correctAnswer) {
+        this.text = text;
+        this.correctAnswer = correctAnswer;
     }
 
-    public void pay(double amount) {
-        if (amount > 0) {
-            amountPaid += amount;
-        }
+    public String getText() {
+        return text;
     }
 
-    public double getBalanceDue() {
-        return basePrice - amountPaid;
-    }
-
-    public static String registerBatch(String[] attendeeIds,
-                                       double basePrice) {
-        int registered = 0;
-        int rejected = 0;
-
-        for (int i = 0; i < attendeeIds.length; i++) {
-            try {
-                new EventTicket(attendeeIds[i], basePrice);
-                registered++;
-            } catch (IllegalArgumentException e) {
-                rejected++;
-            }
-        }
-
-        return "Registered: " + registered
-                + " | Rejected: " + rejected;
+    public boolean checkAnswer(String answer) {
+        return correctAnswer.equalsIgnoreCase(answer);
     }
 }
 
-class WorkshopTicket extends EventTicket {
-    private String track;
+class TrueFalseQuestion implements Question {
+    private String text;
+    private String correctAnswer;
 
-    public WorkshopTicket(String attendeeId, double basePrice,
-                          String track) {
-        super(attendeeId, basePrice);
-        this.track = track;
+    TrueFalseQuestion(String text, String correctAnswer) {
+        this.text = text;
+        this.correctAnswer = correctAnswer;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public boolean checkAnswer(String answer) {
+        return correctAnswer.equalsIgnoreCase(answer);
+    }
+}
+
+class Examination {
+    String title;
+    ArrayList<Question> questions = new ArrayList<>();
+
+    Examination(String title) {
+        this.title = title;
+    }
+
+    void addQuestion(Question q) {
+        questions.add(q);
+    }
+}
+
+class Student {
+    String name;
+    ArrayList<Attempt> attempts = new ArrayList<>();
+
+    Student(String name) {
+        this.name = name;
+    }
+
+    Attempt startExam(Examination exam) {
+        for (Attempt a : attempts) {
+            if (a.exam == exam) {
+                throw new IllegalStateException(
+                    "Attempt already exists for this examination");
+            }
+        }
+
+        Attempt a = new Attempt(this, exam);
+        attempts.add(a);
+
+        System.out.println("Examination '" + exam.title
+                + "' started by " + name + ".");
+
+        return a;
+    }
+}
+
+class Attempt {
+    Student student;
+    Examination exam;
+    Map<Integer, String> answers = new HashMap<>();
+    boolean submitted = false;
+
+    Attempt(Student student, Examination exam) {
+        this.student = student;
+        this.exam = exam;
+    }
+
+    void answerQuestion(int number, String answer) {
+        if (submitted) {
+            throw new IllegalStateException("Attempt already submitted");
+        }
+
+        if (number < 1 || number > exam.questions.size()) {
+            throw new IllegalArgumentException("Invalid question number");
+        }
+
+        answers.put(number - 1, answer);
+
+        System.out.println("Question " + number
+                + " answered with '" + answer + "'.");
+    }
+
+    void submit() {
+        if (submitted) {
+            throw new IllegalStateException("Attempt already submitted");
+        }
+
+        submitted = true;
+
+        System.out.println("Examination '" + exam.title
+                + "' submitted successfully.");
+
+        int score = 0;
+
+        for (int i = 0; i < exam.questions.size(); i++) {
+            String answer = answers.get(i);
+
+            if (answer != null &&
+                    exam.questions.get(i).checkAnswer(answer)) {
+                score++;
+            }
+        }
+
+        System.out.println("Result for '" + exam.title
+                + "' attempt: " + score + "/"
+                + exam.questions.size() + " correct");
     }
 }
 
 public class Problem1 {
     public static void main(String[] args) {
-        WorkshopTicket w =
-                new WorkshopTicket("STU2", 1200, "AI/ML");
+        Examination exam = new Examination("Math Quiz");
 
-        w.pay(500);
-        System.out.println(w.getBalanceDue());
+        exam.addQuestion(new MCQQuestion("2 + 2?", "A"));
+        exam.addQuestion(new MCQQuestion("3 + 3?", "B"));
 
-        System.out.println(EventTicket.registerBatch(
-                new String[]{"STU1", "ST1", "STU2", " ", "STU3"},
-                500));
+        Student s = new Student("Student");
 
-        try {
-            new EventTicket("ST1", 500);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Construction rejected");
-        }
+        Attempt a = s.startExam(exam);
+        a.answerQuestion(1, "A");
+        a.answerQuestion(2, "C");
+        a.submit();
     }
 }
